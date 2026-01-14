@@ -29,8 +29,10 @@ const Header = () => {
     return (
         <header
             className={cn(
-                'sticky top-0 z-50 transition-all duration-300 bg-white',
-                scrolled ? 'shadow-soft-md py-2' : 'border-b border-neutral-100 py-4'
+                'sticky top-0 z-50 transition-all duration-500 backdrop-blur-md',
+                scrolled
+                    ? 'bg-white/80 shadow-soft-lg py-2 border-b border-primary-100/20'
+                    : 'bg-transparent py-4'
             )}
         >
             <nav className="container-padding max-w-7xl mx-auto" aria-label="Global">

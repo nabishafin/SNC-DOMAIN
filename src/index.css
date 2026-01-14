@@ -9,6 +9,7 @@
 
   body {
     @apply bg-white text-neutral-900 antialiased;
+    font-size: 17px;
   }
 }
 
@@ -18,7 +19,7 @@
   }
   
   .section-padding {
-    @apply py-12 sm:py-16 lg:py-20;
+    @apply py-6 sm:py-8 lg:py-10;
   }
 }
 
