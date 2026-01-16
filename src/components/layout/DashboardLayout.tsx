@@ -47,10 +47,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <aside className="hidden lg:flex lg:flex-col lg:w-72 bg-white border-r border-neutral-200 shadow-soft z-20">
                 {/* Logo */}
                 <div className="flex items-center gap-3 px-6 h-20 border-b border-neutral-100">
-                    <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center shadow-md">
-                        <Globe className="w-6 h-6 text-white" />
-                    </div>
-                    <span className="text-xl font-bold text-neutral-900 tracking-tight">SNC-Domain</span>
+                    <img src="/snc-logo.png" alt="SNC Logo" className="h-8 w-auto object-contain" />
                 </div>
 
                 {/* Navigation */}
@@ -114,10 +111,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 {/* Logo Mobile */}
                 <div className="flex items-center justify-between px-6 h-16 border-b border-neutral-100">
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-                            <Globe className="w-5 h-5 text-white" />
-                        </div>
-                        <span className="text-lg font-bold text-neutral-900">SNC-Domain</span>
+                        <img src="/snc-logo.png" alt="SNC Logo" className="h-8 w-auto object-contain" />
                     </div>
                     <button
                         onClick={() => setSidebarOpen(false)}

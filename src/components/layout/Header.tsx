@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Menu, X, Globe, ShoppingCart } from 'lucide-react';
+import { Menu, X, ShoppingCart } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useCartStore } from '../../store/cartStore';
@@ -40,12 +40,11 @@ const Header = () => {
                     {/* Logo */}
                     <div className="flex items-center gap-2">
                         <Link to="/" className="flex items-center gap-2.5 group">
-                            <div className="w-9 h-9 bg-primary-600 rounded-lg flex items-center justify-center shadow-lg group-hover:bg-primary-700 transition-colors">
-                                <Globe className="w-5 h-5 text-white" />
-                            </div>
-                            <span className="text-xl font-bold text-neutral-900 tracking-tight group-hover:text-primary-600 transition-colors">
-                                SNC-Domain
-                            </span>
+                            <img
+                                src="/snc-logo.png"
+                                alt="SNC DOMAINS"
+                                className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
+                            />
                         </Link>
                     </div>
 

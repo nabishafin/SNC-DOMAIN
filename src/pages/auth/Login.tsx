@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Globe, Lock, CheckCircle } from 'lucide-react';
+import { Lock, CheckCircle } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { useToast } from '../../context/ToastContext';
 import Input from '../../components/ui/Input';
@@ -64,11 +64,8 @@ const Login = () => {
             <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <Link to="/" className="inline-flex items-center gap-2 group">
-                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                            <Globe className="w-7 h-7 text-primary-600" />
-                        </div>
-                        <span className="text-3xl font-bold text-white tracking-tight">SNC-Domain</span>
+                    <Link to="/" className="inline-flex items-center justify-center group">
+                        <img src="/snc-logo.png" alt="SNC-Domain" className="h-12 w-auto object-contain" />
                     </Link>
                 </div>
 

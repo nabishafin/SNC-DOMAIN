@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Globe, Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
+import { Facebook, Twitter, Linkedin, Instagram } from 'lucide-react';
 
 const Footer = () => {
     const currentYear = new Date().getFullYear();
@@ -37,10 +37,11 @@ const Footer = () => {
                     {/* Brand Column */}
                     <div className="lg:col-span-2 space-y-6">
                         <Link to="/" className="flex items-center gap-2 group">
-                            <div className="w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
-                                <Globe className="w-6 h-6 text-white" />
-                            </div>
-                            <span className="text-2xl font-bold text-white tracking-tight">SNC-Domain</span>
+                            <img
+                                src="/snc-logo.png"
+                                alt="SNC DOMAINS"
+                                className="h-12 w-auto object-contain transition-transform group-hover:scale-105"
+                            />
                         </Link>
                         <p className="text-neutral-400 text-sm leading-relaxed max-w-sm">
                             Empowering your digital presence with premium domain services. Secure, fast, and reliable domain management for modern businesses.
