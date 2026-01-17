@@ -31,9 +31,9 @@ const Footer = () => {
     };
 
     return (
-        <footer className="bg-neutral-900 text-neutral-300 pt-20 pb-10">
+        <footer className="bg-neutral-900 text-neutral-300 pt-12 pb-8 md:pt-20 md:pb-10">
             <div className="container-padding max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 md:gap-12 mb-12 md:mb-16">
                     {/* Brand Column */}
                     <div className="lg:col-span-2 space-y-6">
                         <Link to="/" className="flex items-center gap-2 group">
@@ -104,9 +104,9 @@ const Footer = () => {
                 </div>
 
                 {/* Bottom Bar */}
-                <div className="pt-8 border-t border-neutral-800 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-neutral-500">
-                    <p>&copy; {currentYear} SNC-Domain. All rights reserved.</p>
-                    <div className="flex items-center gap-6">
+                <div className="pt-8 border-t border-neutral-800 flex flex-col md:flex-row justify-between items-center gap-6 md:gap-4 text-sm text-neutral-500">
+                    <p className="text-center md:text-left">&copy; {currentYear} SNC-Domain. All rights reserved.</p>
+                    <div className="flex flex-wrap justify-center gap-4 md:gap-6">
                         <Link to="#" className="hover:text-primary-400 transition-colors">Privacy Policy</Link>
                         <Link to="#" className="hover:text-primary-400 transition-colors">Terms of Service</Link>
                         <Link to="#" className="hover:text-primary-400 transition-colors">Cookie Preferences</Link>

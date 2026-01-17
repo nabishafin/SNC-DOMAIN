@@ -104,17 +104,17 @@ const Overview = () => {
                         <div className="divide-y divide-neutral-100">
                             {mockDomains.slice(0, 4).map((domain) => (
                                 <div key={domain.id} className="p-4 sm:px-6 hover:bg-neutral-50/50 transition-colors group">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-500 font-bold text-lg group-hover:bg-white group-hover:shadow-sm transition-all">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
+                                            <div className="w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-500 font-bold text-lg group-hover:bg-white group-hover:shadow-sm transition-all flex-shrink-0">
                                                 {domain.name.charAt(0).toUpperCase()}
                                             </div>
-                                            <div>
-                                                <h3 className="font-semibold text-neutral-900 group-hover:text-primary-600 transition-colors">
+                                            <div className="min-w-0 flex-1">
+                                                <h3 className="font-semibold text-neutral-900 group-hover:text-primary-600 transition-colors truncate">
                                                     {domain.name}{domain.tld}
                                                 </h3>
-                                                <p className="text-xs text-neutral-500 flex items-center gap-1.5 mt-0.5">
-                                                    <Calendar className="w-3 h-3" />
+                                                <p className="text-xs text-neutral-500 flex items-center gap-1.5 mt-0.5 truncate">
+                                                    <Calendar className="w-3 h-3 flex-shrink-0" />
                                                     Expires {new Date(domain.expirationDate).toLocaleDateString()}
                                                 </p>
                                             </div>
@@ -127,7 +127,7 @@ const Overview = () => {
                                                         ? 'warning'
                                                         : 'neutral'
                                             }
-                                            className="capitalize"
+                                            className="capitalize flex-shrink-0"
                                         >
                                             {domain.status.replace('-', ' ')}
                                         </Badge>

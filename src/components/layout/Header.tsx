@@ -43,7 +43,7 @@ const Header = () => {
                             <img
                                 src="/snc-logo.png"
                                 alt="SNC DOMAINS"
-                                className="h-10 w-auto object-contain transition-transform group-hover:scale-105"
+                                className="h-10 md:h-[70px] w-auto object-contain transition-transform group-hover:scale-105"
                             />
                         </Link>
                     </div>
@@ -111,7 +111,7 @@ const Header = () => {
 
                 {/* Mobile menu */}
                 {mobileMenuOpen && (
-                    <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-neutral-100 shadow-soft-lg animate-in slide-in-from-top-2 duration-200">
+                    <div className="md:hidden absolute top-full left-0 w-full bg-white/95 backdrop-blur-xl border-b border-neutral-100 shadow-soft-lg animate-in slide-in-from-top-2 duration-200 z-[60]">
                         <div className="container-padding py-6 flex flex-col gap-4">
                             {navigation.map((item) => (
                                 <Link

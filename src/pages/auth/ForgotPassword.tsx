@@ -41,13 +41,14 @@ const ForgotPassword = () => {
             <div className="absolute top-0 left-0 w-full h-96 bg-primary-900 skew-y-3 origin-top-left -translate-y-48"></div>
 
             <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-                <div className="text-center mb-8">
-                    <Link to="/">
-                        <img src="/snc-logo.png" alt="SNC-Domain" className="h-12 w-auto object-contain mb-2 mx-auto" />
-                    </Link>
-                </div>
+                {/* Logo removed from here */}
 
                 <div className="bg-white py-10 px-8 shadow-float rounded-2xl border border-neutral-100">
+                    <div className="text-center mb-6">
+                        <Link to="/" className="inline-block">
+                            <img src="/snc-logo.png" alt="SNC-Domain" className="h-12 w-auto object-contain mx-auto" />
+                        </Link>
+                    </div>
                     {success ? (
                         <div className="text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="w-16 h-16 mx-auto mb-6 bg-success-50 rounded-full flex items-center justify-center">

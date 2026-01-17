@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, Zap, Clock, Globe2, TrendingUp, Users } from 'lucide-react';
+import { Shield, Zap, Clock, Globe2, TrendingUp, Users, Filter, ChevronDown } from 'lucide-react';
 import { useDomainStore } from '../../store/domainStore';
 import { useCartStore } from '../../store/cartStore';
 import { useToast } from '../../context/ToastContext';
@@ -255,8 +255,23 @@ const DomainSearch = () => {
                             <div className="flex flex-col lg:flex-row gap-8">
                                 {/* Sidebar Filter */}
                                 <div className="lg:w-72 flex-shrink-0">
-                                    <div className="sticky top-24">
-                                        <TldFilter onFilterChange={handleFilterChange} />
+                                    <div className="lg:sticky lg:top-24">
+                                        <div className="lg:hidden mb-4">
+                                            <Button
+                                                variant="outline"
+                                                className="w-full flex items-center justify-between"
+                                                onClick={() => document.getElementById('mobile-filters')?.classList.toggle('hidden')}
+                                            >
+                                                <span className="flex items-center gap-2">
+                                                    <Filter className="w-4 h-4" />
+                                                    Filters
+                                                </span>
+                                                <ChevronDown className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                        <div id="mobile-filters" className="hidden lg:block">
+                                            <TldFilter onFilterChange={handleFilterChange} />
+                                        </div>
                                     </div>
                                 </div>
 

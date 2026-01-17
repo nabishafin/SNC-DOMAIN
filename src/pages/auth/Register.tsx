@@ -82,18 +82,19 @@ const Register = () => {
     const passwordStrength = getPasswordStrength();
 
     return (
-        <div className="min-h-screen bg-neutral-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+        <div className="min-h-screen bg-neutral-50 flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
             {/* Background decoration */}
             <div className="absolute top-0 left-0 w-full h-96 bg-primary-900 skew-y-3 origin-top-left -translate-y-48"></div>
 
             <div className="sm:mx-auto sm:w-full sm:max-w-md relative z-10">
-                <div className="text-center mb-8">
-                    <Link to="/" className="inline-flex items-center justify-center">
-                        <img src="/snc-logo.png" alt="SNC-Domain" className="h-12 w-auto object-contain mb-2" />
-                    </Link>
-                </div>
+                {/* Logo removed from here */}
 
                 <div className="bg-white py-10 px-8 shadow-float rounded-2xl border border-neutral-100">
+                    <div className="text-center mb-6">
+                        <Link to="/" className="inline-block">
+                            <img src="/snc-logo.png" alt="SNC-Domain" className="h-12 w-auto object-contain mx-auto" />
+                        </Link>
+                    </div>
                     <div className="mb-8 text-center">
                         <h2 className="text-2xl font-bold text-neutral-900">Create your account</h2>
                         <p className="mt-2 text-sm text-neutral-600">Start managing your domains today</p>

@@ -93,7 +93,7 @@ const Home = () => {
                                     SNC-Domain Revolution: .com domains for $9.99
                                 </motion.span>
 
-                                <h1 className="text-4xl md:text-5xl lg:text-7xl font-black tracking-tight mb-6 leading-tight text-neutral-900">
+                                <h1 className="text-3xl md:text-5xl lg:text-7xl font-black tracking-tight mb-6 leading-tight text-neutral-900">
                                     Next-Gen <br />
                                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary-600 via-primary-500 to-blue-600">
                                         Domain Identity.
@@ -287,7 +287,7 @@ const Home = () => {
                         <p className="text-xs font-bold text-neutral-400 tracking-[0.2em] uppercase mt-2">Maximum Value. Zero Hidden Fees.</p>
                     </div>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                         {[
                             { name: '.com', price: '$9.99', old: '$14.99', badge: 'Best Seller', popular: true },
                             { name: '.net', price: '$11.99', popular: false },
@@ -470,7 +470,7 @@ const Home = () => {
                         viewport={{ once: true }}
                         className="bg-white/5 backdrop-blur-3xl p-8 md:p-12 rounded-[2rem] border border-white/10 shadow-3xl relative overflow-hidden"
                     >
-                        <h2 className="text-5xl md:text-6xl font-black text-white mb-4 tracking-tighter">
+                        <h2 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tighter">
                             Your <span className="text-primary-400">Digital Legacy</span> Begins Now.
                         </h2>
                         <p className="text-neutral-400 text-base mb-8 max-w-xl mx-auto leading-relaxed">

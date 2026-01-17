@@ -111,7 +111,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 {/* Logo Mobile */}
                 <div className="flex items-center justify-between px-6 h-16 border-b border-neutral-100">
                     <div className="flex items-center gap-2">
-                        <img src="/snc-logo.png" alt="SNC Logo" className="h-8 w-auto object-contain" />
+                        <img src="/snc-logo.png" alt="SNC Logo" className="h-9 w-auto object-contain" />
                     </div>
                     <button
                         onClick={() => setSidebarOpen(false)}
@@ -175,7 +175,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                             <Menu className="w-6 h-6" />
                         </button>
 
-                        {/* Breadcrumb */}
+                        {/* Breadcrumb - Desktop */}
                         <nav className="hidden sm:flex items-center gap-2 text-sm text-neutral-500">
                             <Link to="/dashboard" className="hover:text-primary-600 transition-colors">Dashboard</Link>
                             {location.pathname !== '/dashboard' && (
@@ -187,6 +187,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                                 </>
                             )}
                         </nav>
+
+                        {/* Mobile Title */}
+                        <span className="sm:hidden font-semibold text-neutral-900">
+                            {navigation.find(n => isActive(n.href))?.name || 'Dashboard'}
+                        </span>
                     </div>
 
                     <div className="flex items-center gap-4">

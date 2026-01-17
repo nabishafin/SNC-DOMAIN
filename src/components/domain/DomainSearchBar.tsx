@@ -38,7 +38,7 @@ const DomainSearchBar = ({ className, initialValue = '' }: DomainSearchBarProps)
                     type="text"
                     value={domain}
                     onChange={(e) => setDomain(e.target.value)}
-                    className="block w-full rounded-xl border-0 py-5 pl-14 pr-48 text-neutral-900 shadow-soft-lg ring-1 ring-inset ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-inset focus:ring-primary-500 sm:text-lg sm:leading-6 transition-shadow"
+                    className="block w-full rounded-xl border-0 py-5 pl-14 pr-16 sm:pr-48 text-neutral-900 shadow-soft-lg ring-1 ring-inset ring-neutral-200 placeholder:text-neutral-400 focus:ring-2 focus:ring-inset focus:ring-primary-500 sm:text-lg sm:leading-6 transition-shadow"
                     placeholder="Find your perfect domain name..."
                 />
 

@@ -54,17 +54,17 @@ const Checkout = () => {
 
                             {/* Account Info */}
                             <Card className="border-none shadow-soft-md">
-                                <CardHeader className="border-b border-neutral-100 pb-4 flex items-center justify-between">
+                                <CardHeader className="border-b border-neutral-100 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-0">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-success-100 text-success-600 flex items-center justify-center">
+                                        <div className="w-8 h-8 rounded-full bg-success-100 text-success-600 flex items-center justify-center flex-shrink-0">
                                             <CheckCircle className="w-5 h-5" />
                                         </div>
-                                        <div>
+                                        <div className="min-w-0">
                                             <h2 className="text-lg font-bold text-neutral-900">Account Information</h2>
-                                            <p className="text-sm text-neutral-500">Logged in as {user?.email}</p>
+                                            <p className="text-sm text-neutral-500 truncate">Logged in as {user?.email}</p>
                                         </div>
                                     </div>
-                                    <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/settings')}>Edit</Button>
+                                    <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard/settings')} className="w-full sm:w-auto">Edit</Button>
                                 </CardHeader>
                             </Card>
 
