@@ -219,9 +219,14 @@ const Home = () => {
             {/* Exclusive Features Section - Spaceless Flow */}
             <section className="bg-neutral-50 py-6 overflow-hidden border-b border-neutral-100">
                 <div className="container-padding max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-8">
+                    {/* Left content */}
                     <div className="lg:w-[40%] text-center lg:text-left">
-                        <h2 className="text-4xl font-black text-neutral-900 mb-3 tracking-tight">Infrastructure <span className="text-primary-600">for Scale</span></h2>
-                        <p className="text-neutral-500 text-base mb-4 max-w-md mx-auto lg:mx-0">Proprietary platform engineered for speed, security, and intuitive management.</p>
+                        <h2 className="text-4xl font-black text-neutral-900 mb-3 tracking-tight">
+                            Infrastructure <span className="text-primary-600">for Scale</span>
+                        </h2>
+                        <p className="text-neutral-500 text-base mb-4 max-w-md mx-auto lg:mx-0">
+                            Proprietary platform engineered for speed, security, and intuitive management.
+                        </p>
                         <motion.img
                             animate={{ y: [0, -10, 0] }}
                             transition={{ duration: 6, repeat: Infinity }}
@@ -229,25 +234,29 @@ const Home = () => {
                             className="w-full max-w-[320px] mx-auto lg:mx-0 drop-shadow-xl"
                         />
                     </div>
+
+                    {/* Cards */}
                     <div className="lg:w-[60%] grid grid-cols-1 md:grid-cols-2 gap-4">
                         {exclusiveFeatures.map((feature, index) => (
                             <motion.div
                                 key={index}
-                                whileHover={{ y: -5, backgroundColor: "rgba(255, 255, 255, 0.9)" }}
-                                className="bg-white/70 backdrop-blur-md p-5 rounded-xl border border-neutral-100 flex items-start gap-4 transition-all"
+                                whileHover={{ y: -5 }} // only lift effect
+                                className="bg-black p-6 rounded-2xl border border-neutral-800 flex items-start gap-4 transition-all"
                             >
-                                <div className={cn(feature.color, "w-14 h-14 rounded-lg flex items-center justify-center flex-shrink-0")}>
-                                    <feature.icon className={cn("w-7 h-7", feature.iconColor)} />
+                                <div className="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center flex-shrink-0">
+                                    <feature.icon className="w-6 h-6 text-white" />
                                 </div>
+
                                 <div>
-                                    <h3 className="text-lg font-bold text-neutral-900 mb-1">{feature.title}</h3>
-                                    <p className="text-neutral-500 text-sm leading-snug">{feature.description}</p>
+                                    <h3 className="text-lg font-black text-white mb-1">{feature.title}</h3>
+                                    <p className="text-neutral-400 text-sm leading-relaxed">{feature.description}</p>
                                 </div>
                             </motion.div>
                         ))}
                     </div>
                 </div>
             </section>
+
 
             {/* Ecosystem/Integrations Section - New */}
             <section className="py-6 bg-white border-b border-neutral-100 overflow-hidden">
@@ -273,10 +282,10 @@ const Home = () => {
                             ))}
                         </div>
                     </div>
-                    <div className="bg-neutral-900 rounded-2xl p-8 border border-neutral-800 flex flex-wrap justify-center gap-x-12 gap-y-8">
+                    <div className="bg-white rounded-2xl p-8 border border-neutral-100 flex flex-wrap justify-center gap-x-12 gap-y-8 shadow-sm">
                         {['AWS', 'Cloudflare', 'Google', 'Vercel', 'Netlify', 'GitHub', 'Shopify', 'WordPress', 'Heroku', 'DigitalOcean', 'Next.js', 'React'].map((p) => (
-                            <div key={p} className="flex flex-col items-center group">
-                                <div className="text-white font-bold text-xs uppercase tracking-wide group-hover:text-primary-400 transition-colors">{p}</div>
+                            <div key={p} className="grid grid-cols-2 gap-2">
+                                <div className="text-primary-600 font-bold text-xs uppercase tracking-wide">{p}</div>
                             </div>
                         ))}
                     </div>
