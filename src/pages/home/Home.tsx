@@ -282,12 +282,16 @@ const Home = () => {
                             ))}
                         </div>
                     </div>
-                    <div className="bg-white rounded-2xl p-8 border border-neutral-100 flex flex-wrap justify-center gap-x-12 gap-y-8 shadow-sm">
-                        {['AWS', 'Cloudflare', 'Google', 'Vercel', 'Netlify', 'GitHub', 'Shopify', 'WordPress', 'Heroku', 'DigitalOcean', 'Next.js', 'React'].map((p) => (
-                            <div key={p} className="grid grid-cols-2 gap-2">
-                                <div className="text-primary-600 font-bold text-xs uppercase tracking-wide">{p}</div>
-                            </div>
-                        ))}
+                    <div className="bg-white rounded-2xl p-8 border border-neutral-100 shadow-sm">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8 text-center">
+                            {['AWS', 'Cloudflare', 'Google', 'Vercel', 'Netlify', 'GitHub', 'Shopify', 'WordPress', 'Heroku', 'DigitalOcean', 'Next.js', 'React'].map((p) => (
+                                <div key={p} className="flex items-center justify-center group">
+                                    <div className="text-primary-600 font-bold text-xs uppercase tracking-wider group-hover:text-primary-700 transition-colors cursor-default">
+                                        {p}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </section>
