@@ -47,16 +47,16 @@ const Footer = () => {
                             Empowering your digital presence with premium domain services. Secure, fast, and reliable domain management for modern businesses.
                         </p>
                         <div className="flex items-center gap-4 pt-2">
-                            <a href="#" className="p-2 bg-neutral-800 rounded-full hover:bg-primary-600 hover:text-white transition-all text-neutral-400">
+                            <a href="#" className="p-2 bg-neutral-800 rounded-full hover:bg-primary-600 hover:text-white transition-all text-primary-600">
                                 <Facebook className="w-5 h-5" />
                             </a>
-                            <a href="#" className="p-2 bg-neutral-800 rounded-full hover:bg-primary-600 hover:text-white transition-all text-neutral-400">
+                            <a href="#" className="p-2 bg-neutral-800 rounded-full hover:bg-primary-600 hover:text-white transition-all text-primary-600">
                                 <Twitter className="w-5 h-5" />
                             </a>
-                            <a href="#" className="p-2 bg-neutral-800 rounded-full hover:bg-primary-600 hover:text-white transition-all text-neutral-400">
+                            <a href="#" className="p-2 bg-neutral-800 rounded-full hover:bg-primary-600 hover:text-white transition-all text-primary-600">
                                 <Linkedin className="w-5 h-5" />
                             </a>
-                            <a href="#" className="p-2 bg-neutral-800 rounded-full hover:bg-primary-600 hover:text-white transition-all text-neutral-400">
+                            <a href="#" className="p-2 bg-neutral-800 rounded-full hover:bg-primary-600 hover:text-white transition-all text-primary-600">
                                 <Instagram className="w-5 h-5" />
                             </a>
                         </div>
