@@ -175,13 +175,17 @@ const Home = () => {
                     </p>
                     <div className="flex flex-wrap justify-center items-center gap-8 md:gap-12 flex-1 grayscale opacity-50 hover:grayscale-0 hover:opacity-100 transition-all duration-500">
                         {['TechCorp', 'GlobalSystems', 'InnovateLab', 'FutureNet', 'AlphaWave'].map((name) => (
-                            <span key={name} className="text-xl font-black text-neutral-900 tracking-tighter italic select-none">
+                            <span
+                                key={name}
+                                className="text-xl font-black text-neutral-900 tracking-tighter select-none"
+                            >
                                 {name}
                             </span>
                         ))}
                     </div>
                 </div>
             </section>
+
 
             {/* Stats Section - New */}
             <section className="bg-white py-6 border-b border-neutral-100 relative overflow-hidden">
@@ -269,10 +273,10 @@ const Home = () => {
                             ))}
                         </div>
                     </div>
-                    <div className="bg-neutral-50/50 rounded-2xl p-6 border border-neutral-100 grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                    <div className="bg-neutral-900 rounded-2xl p-8 border border-neutral-800 flex flex-wrap justify-center gap-x-12 gap-y-8">
                         {['AWS', 'Cloudflare', 'Google', 'Vercel', 'Netlify', 'GitHub', 'Shopify', 'WordPress', 'Heroku', 'DigitalOcean', 'Next.js', 'React'].map((p) => (
                             <div key={p} className="flex flex-col items-center group">
-                                <div className="text-neutral-300 font-bold text-[10px] uppercase tracking-widest group-hover:text-primary-500 transition-colors uppercase italic">{p}</div>
+                                <div className="text-white font-bold text-xs uppercase tracking-wide group-hover:text-primary-400 transition-colors">{p}</div>
                             </div>
                         ))}
                     </div>
@@ -298,8 +302,7 @@ const Home = () => {
                                 key={i}
                                 whileHover={{ scale: 1.02, y: -4 }}
                                 className={cn(
-                                    "p-6 rounded-2xl relative border overflow-hidden transition-all",
-                                    ext.popular ? "bg-[#0a0a0a] text-white border-primary-900/50 shadow-xl shadow-primary-500/10" : "bg-neutral-50 border-neutral-100"
+                                    "p-6 rounded-2xl relative border overflow-hidden transition-all bg-[#0a0a0a] text-white border-neutral-800 shadow-xl shadow-primary-500/10"
                                 )}
                             >
                                 {ext.badge && <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-primary-600 text-[9px] font-black uppercase text-white tracking-widest">{ext.badge}</span>}
@@ -308,7 +311,7 @@ const Home = () => {
                                     <div className="text-4xl font-black">{ext.price}</div>
                                     <div className="text-[10px] uppercase font-black opacity-40">Per Year</div>
                                 </div>
-                                <Button variant={ext.popular ? "primary" : "outline"} size="sm" className="w-full h-10 rounded-xl text-xs font-black">Register</Button>
+                                <Button variant="primary" size="sm" className="w-full h-10 rounded-xl text-xs font-black">Register</Button>
                             </motion.div>
                         ))}
                     </div>
@@ -406,23 +409,23 @@ const Home = () => {
 
                         {/* Right Side - Additional Information */}
                         <div className="space-y-4">
-                            <div className="bg-gradient-to-br from-primary-50 to-blue-50 p-6 rounded-2xl border border-primary-100">
+                            <div className="bg-neutral-900 p-6 rounded-2xl border border-neutral-800">
                                 <div className="flex items-center gap-3 mb-4">
                                     <div className="w-12 h-12 bg-primary-600 rounded-xl flex items-center justify-center">
                                         <Shield className="w-6 h-6 text-white" />
                                     </div>
                                     <div>
-                                        <h3 className="text-lg font-black text-neutral-900">24/7 Expert Support</h3>
-                                        <p className="text-xs text-neutral-500">Always here to help</p>
+                                        <h3 className="text-lg font-black text-white">24/7 Expert Support</h3>
+                                        <p className="text-xs text-neutral-400">Always here to help</p>
                                     </div>
                                 </div>
-                                <p className="text-sm text-neutral-600 leading-relaxed mb-4">
+                                <p className="text-sm text-neutral-400 leading-relaxed mb-4">
                                     Our dedicated support team is available around the clock to assist you with any questions or technical issues.
                                 </p>
-                                <Button variant="outline" size="sm" className="w-full">Contact Support</Button>
+                                <Button variant="outline" size="sm" className="w-full border-neutral-700 text-white hover:bg-neutral-800 hover:text-white">Contact Support</Button>
                             </div>
 
-                            <div className="bg-neutral-900 p-6 rounded-2xl text-white">
+                            <div className="bg-neutral-900 p-6 rounded-2xl text-white border border-neutral-800">
                                 <h3 className="text-lg font-black mb-3 flex items-center gap-2">
                                     <CheckCircle className="w-5 h-5 text-success-400" />
                                     What's Included
