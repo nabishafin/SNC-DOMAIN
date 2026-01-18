@@ -38,9 +38,9 @@ const Footer = () => {
                     <div className="lg:col-span-2 space-y-6">
                         <Link to="/" className="flex items-center gap-2 group">
                             <img
-                                src="/snc-logo.png"
+                                src="/snc-logo-footer.png"
                                 alt="SNC DOMAINS"
-                                className="h-12 w-auto object-contain transition-transform group-hover:scale-105"
+                                className="h-20 w-auto object-contain transition-transform group-hover:scale-105"
                             />
                         </Link>
                         <p className="text-white text-sm leading-relaxed max-w-sm">
