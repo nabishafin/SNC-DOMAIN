@@ -15,7 +15,8 @@ import {
     ChevronDown,
     Lock,
     Users,
-    CreditCard
+    CreditCard,
+    Home
 } from 'lucide-react';
 import Button from '../ui/Button';
 import { cn } from '../../lib/utils';
@@ -64,7 +65,9 @@ const DashboardLayout = ({ children }) => {
             <aside className="hidden lg:flex lg:flex-col lg:w-72 bg-white border-r border-neutral-200 shadow-soft z-20">
                 {/* Logo */}
                 <div className="flex items-center gap-3 px-6 h-20 border-b border-neutral-100">
-                    <img src="/snc-logo.png" alt="SNC Logo" className="h-8 w-auto object-contain" />
+                    <Link to="/" className="flex items-center transition-transform hover:scale-105">
+                        <img src="/snc-logo.png" alt="SNC Logo" className="h-8 w-auto object-contain" />
+                    </Link>
                 </div>
 
                 {/* Navigation */}
@@ -105,7 +108,17 @@ const DashboardLayout = ({ children }) => {
                         </div>
                         <ChevronDown className="w-4 h-4 text-neutral-400" />
                     </div>
-                    <div className="px-1">
+                    <div className="px-1 space-y-1">
+                        <Link to="/">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start text-neutral-600 hover:bg-white hover:text-primary-600 font-medium"
+                            >
+                                <Home className="w-4 h-4 mr-2" />
+                                Return to Website
+                            </Button>
+                        </Link>
                         <Button
                             variant="ghost"
                             size="sm"
@@ -135,7 +148,9 @@ const DashboardLayout = ({ children }) => {
                 {/* Logo Mobile */}
                 <div className="flex items-center justify-between px-6 h-16 border-b border-neutral-100">
                     <div className="flex items-center gap-2">
-                        <img src="/snc-logo.png" alt="SNC Logo" className="h-9 w-auto object-contain" />
+                        <Link to="/" className="flex items-center">
+                            <img src="/snc-logo.png" alt="SNC Logo" className="h-9 w-auto object-contain" />
+                        </Link>
                     </div>
                     <button
                         onClick={() => setSidebarOpen(false)}
@@ -182,10 +197,18 @@ const DashboardLayout = ({ children }) => {
                             <p className="text-xs text-neutral-500">{user?.email}</p>
                         </div>
                     </div>
-                    <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full justify-start text-red-600">
-                        <LogOut className="w-4 h-4 mr-2" />
-                        Sign out
-                    </Button>
+                    <div className="space-y-1">
+                        <Link to="/" onClick={() => setSidebarOpen(false)}>
+                            <Button variant="ghost" size="sm" className="w-full justify-start text-neutral-600">
+                                <Home className="w-4 h-4 mr-2" />
+                                Return to Website
+                            </Button>
+                        </Link>
+                        <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full justify-start text-red-600">
+                            <LogOut className="w-4 h-4 mr-2" />
+                            Sign out
+                        </Button>
+                    </div>
                 </div>
             </aside>
 

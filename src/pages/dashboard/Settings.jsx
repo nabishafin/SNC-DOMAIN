@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateUser as updateUserAction } from '../../redux/slices/authSlice';
+import { useChangePasswordMutation } from '../../redux/features/auth/authApi';
 import { User, Lock, Bell, Shield } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Card, { CardBody, CardHeader } from '../../components/ui/Card';
@@ -8,11 +9,13 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useToast } from '../../context/ToastContext';
 import { cn } from '../../lib/utils';
+import { toast } from 'react-toastify';
 
 const Settings = () => {
     const { user } = useSelector((state) => state.auth);
     const dispatch = useDispatch();
     const { addToast } = useToast();
+    const [changePassword, { isLoading: isChangingPassword }] = useChangePasswordMutation();
     const [activeTab, setActiveTab] = useState('profile');
 
     const [profileData, setProfileData] = useState({
@@ -56,10 +59,39 @@ const Settings = () => {
         addToast('success', 'Profile Updated', 'Your profile information has been saved successfully.');
     };
 
-    const handlePasswordSubmit = (e) => {
+    const handlePasswordSubmit = async (e) => {
         e.preventDefault();
-        addToast('success', 'Password Changed', 'Your password has been updated successfully.');
-        setPasswordData({ current: '', new: '', confirm: '' });
+
+        if (passwordData.new !== passwordData.confirm) {
+            addToast('error', 'Validation Error', 'New passwords do not match.');
+            return;
+        }
+
+        if (passwordData.new.length < 6) {
+            addToast('error', 'Validation Error', 'Password must be at least 6 characters.');
+            return;
+        }
+
+        try {
+            const result = await changePassword({
+                currentPassword: passwordData.current,
+                newPassword: passwordData.new
+            }).unwrap();
+
+            if (result?.success) {
+                addToast('success', 'Password Changed', result?.message || 'Your password has been updated successfully.');
+                setPasswordData({ current: '', new: '', confirm: '' });
+                toast.success('Password updated successfully!');
+            } else {
+                addToast('error', 'Update Failed', result?.message || 'Failed to update password.');
+                toast.error(result?.message || 'Failed to update password.');
+            }
+        } catch (err) {
+            console.error('Change password error:', err);
+            const errorMessage = err?.data?.message || 'Something went wrong. Please try again.';
+            addToast('error', 'Update Failed', errorMessage);
+            toast.error(errorMessage);
+        }
     };
 
     const handleNotificationsSubmit = (e) => {
@@ -201,7 +233,7 @@ const Settings = () => {
                                         </div>
 
                                         <div className="flex justify-end pt-4">
-                                            <Button type="submit" variant="primary" className="shadow-lg shadow-primary-500/20">
+                                            <Button type="submit" variant="primary" className="shadow-lg shadow-primary-500/20" isLoading={isChangingPassword}>
                                                 Update Password
                                             </Button>
                                         </div>

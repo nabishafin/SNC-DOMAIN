@@ -66,7 +66,7 @@ const Login = () => {
                 console.log('✅ Token saved to localStorage:', localStorage.getItem('token'));
 
                 toast.success('Welcome back! You have successfully logged in.');
-                navigate('/dashboard');
+                navigate('/');
             } else {
                 toast.error('Login failed. Please try again.');
             }

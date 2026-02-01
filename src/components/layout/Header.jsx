@@ -1,8 +1,10 @@
-import { Link } from 'react-router-dom';
-import { Menu, X, ShoppingCart } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Menu, X, ShoppingCart, User, LayoutDashboard, LogOut } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../../redux/slices/authSlice';
 import { toggleCart } from '../../redux/slices/cartSlice';
+import { useLogoutMutation } from '../../redux/features/auth/authApi';
 import Button from '../ui/Button';
 import { cn } from '../../lib/utils';
 
@@ -10,16 +12,43 @@ const Header = () => {
     const { isAuthenticated, user } = useSelector((state) => state.auth);
     const { items } = useSelector((state) => state.cart);
     const dispatch = useDispatch();
+    const navigate = useNavigate();
+    const [logoutApi] = useLogoutMutation();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+    const menuRef = useRef(null);
 
     useEffect(() => {
         const handleScroll = () => {
             setScrolled(window.scrollY > 10);
         };
+
+        const handleClickOutside = (event) => {
+            if (menuRef.current && !menuRef.current.contains(event.target)) {
+                setUserMenuOpen(false);
+            }
+        };
+
         window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, []);
+
+    const handleLogout = async () => {
+        try {
+            await logoutApi().unwrap();
+        } catch (error) {
+            console.error('Logout failed:', error);
+        } finally {
+            dispatch(logout());
+            setUserMenuOpen(false);
+            navigate('/login');
+        }
+    };
 
     const navigation = [
         { name: 'Home', href: '/' },
@@ -77,11 +106,57 @@ const Header = () => {
                         </button>
 
                         {isAuthenticated && user ? (
-                            <div className="flex items-center gap-3 pl-3 border-l border-neutral-100">
-                                <span className="text-sm font-medium text-neutral-900">{user.name}</span>
-                                <div className="w-9 h-9 bg-primary-100 rounded-full flex items-center justify-center text-primary-700 font-bold border-2 border-white shadow-sm">
-                                    {user.name.charAt(0)}
-                                </div>
+                            <div className="relative" ref={menuRef}>
+                                <button
+                                    onClick={() => setUserMenuOpen(!userMenuOpen)}
+                                    className="flex items-center gap-3 pl-3 border-l border-neutral-100 hover:opacity-80 transition-opacity"
+                                >
+                                    <span className="text-sm font-medium text-neutral-900 hidden sm:block">
+                                        {user.firstName || user.name || 'User'}
+                                    </span>
+                                    <div className="w-9 h-9 bg-primary-100 rounded-full flex items-center justify-center text-primary-700 font-bold border-2 border-white shadow-sm ring-2 ring-primary-50">
+                                        {(user.firstName || user.name || 'U').charAt(0)}
+                                    </div>
+                                </button>
+
+                                {/* Dropdown Menu */}
+                                {userMenuOpen && (
+                                    <div className="absolute right-0 mt-3 w-56 bg-white rounded-2xl shadow-float border border-neutral-100 py-2 animate-in fade-in zoom-in-95 duration-200 z-50 overflow-hidden">
+                                        <div className="px-4 py-3 border-b border-neutral-50 mb-1">
+                                            <p className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Account</p>
+                                            <p className="text-sm font-bold text-neutral-900 truncate mt-0.5">{user.firstName} {user.lastName}</p>
+                                            <p className="text-[11px] text-neutral-500 truncate">{user.email}</p>
+                                        </div>
+
+                                        <Link
+                                            to="/dashboard/settings"
+                                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-600 hover:bg-primary-50 hover:text-primary-700 transition-colors"
+                                            onClick={() => setUserMenuOpen(false)}
+                                        >
+                                            <User className="w-4 h-4" />
+                                            Profile Page
+                                        </Link>
+
+                                        <Link
+                                            to="/dashboard"
+                                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-neutral-600 hover:bg-primary-50 hover:text-primary-700 transition-colors"
+                                            onClick={() => setUserMenuOpen(false)}
+                                        >
+                                            <LayoutDashboard className="w-4 h-4" />
+                                            Dashboard
+                                        </Link>
+
+                                        <div className="h-px bg-neutral-50 my-1"></div>
+
+                                        <button
+                                            onClick={handleLogout}
+                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                            Logout
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <>

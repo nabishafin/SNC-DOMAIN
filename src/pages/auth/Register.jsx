@@ -81,7 +81,7 @@ const Register = () => {
                 }));
 
                 toast.success('Registration successful! Welcome!');
-                navigate('/dashboard');
+                navigate('/');
             } else if (result?.success) {
                 // If no token in response, redirect to login
                 toast.success('Registration successful! Please login.');

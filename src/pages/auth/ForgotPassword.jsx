@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { toast } from 'react-toastify';
 import { useForgotPasswordMutation } from '../../redux/features/auth/authApi';
 import { setResetEmail } from '../../redux/slices/forgotPasswordSlice';
 import Input from '../../components/ui/Input';
@@ -33,12 +34,20 @@ const ForgotPassword = () => {
 
         try {
             const result = await forgotPassword({ email }).unwrap();
+            console.log('Forgot Password Result:', result);
+
             if (result?.success) {
                 dispatch(setResetEmail(email));
                 setSuccess(true);
+                toast.success(result?.message || 'Password reset instructions sent to your email.');
+            } else {
+                toast.error(result?.message || 'Failed to send reset link. Please try again.');
             }
         } catch (err) {
-            setError(err?.data?.message || 'Something went wrong. Please try again.');
+            console.error('Forgot Password Error:', err);
+            const errorMessage = err?.data?.message || 'Something went wrong. Please try again.';
+            setError(errorMessage);
+            toast.error(errorMessage);
         }
     };
 
