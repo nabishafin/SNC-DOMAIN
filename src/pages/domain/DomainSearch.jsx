@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, Zap, Clock, Globe2, TrendingUp, Users, Filter, ChevronDown } from 'lucide-react';
+import { Shield, Zap, Clock, Globe2, TrendingUp, Users, Filter, ChevronDown, Loader2 } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setTldFilter, setPriceRange } from '../../redux/slices/domainSlice';
 import { addToCart } from '../../redux/slices/cartSlice';
 import { useToast } from '../../context/ToastContext';
+import { useLazySearchDomainQuery } from '../../redux/features/domain/domainApi';
 import PublicLayout from '../../components/layout/PublicLayout';
 import DomainSearchBar from '../../components/domain/DomainSearchBar';
 import DomainResultItem from '../../components/domain/DomainResultItem';
@@ -21,40 +22,24 @@ const DomainSearch = () => {
     const { addToast } = useToast();
     const [results, setResults] = useState([]);
 
-    const performSearch = (query) => {
-        let domain = query.toLowerCase();
-        let tld = '';
+    const [triggerSearch, { data: apiResults, isFetching, isError }] = useLazySearchDomainQuery();
 
-        const parts = query.split('.');
-        if (parts.length > 1) {
-            tld = '.' + parts[parts.length - 1];
-            domain = parts.slice(0, parts.length - 1).join('.');
-        } else {
-            tld = '.com';
+    const performSearch = async (query) => {
+        if (!query) return;
+        try {
+            await triggerSearch(query).unwrap();
+        } catch (err) {
+            console.error('Search failed:', err);
+            addToast('error', 'Search Failed', 'Could not fetch domain results. Please try again.');
         }
-
-        // Mock Search Results Generation
-        const mockResults = [{
-            domain,
-            tld,
-            available: Math.random() > 0.3,
-            price: tldData.find((t) => t.extension === tld)?.pricing.registration || 12.99,
-        }];
-
-        // Add 5 random suggestions
-        const otherTlds = tldData.filter((t) => t.extension !== tld).sort(() => 0.5 - Math.random()).slice(0, 5);
-        otherTlds.forEach((t) => {
-            mockResults.push({
-                domain,
-                tld: t.extension,
-                available: Math.random() > 0.4,
-                price: t.pricing.registration,
-                premium: Math.random() > 0.9,
-            });
-        });
-
-        setResults(mockResults);
     };
+
+    // Update results when API data changes
+    useEffect(() => {
+        if (apiResults) {
+            setResults(Array.isArray(apiResults) ? apiResults : [apiResults]);
+        }
+    }, [apiResults]);
 
     const handleFilterChange = (newFilters) => {
         if (newFilters.categories) dispatch(setTldFilter(newFilters.categories));
@@ -120,7 +105,7 @@ const DomainSearch = () => {
         { icon: TrendingUp, value: '99.99%', label: 'Uptime' },
     ];
 
-    const hasSearched = results.length > 0;
+    const hasSearched = results.length > 0 || isFetching;
 
     return (
         <PublicLayout>
@@ -251,7 +236,12 @@ const DomainSearch = () => {
             {hasSearched && (
                 <section className="py-12 bg-neutral-50 min-h-screen">
                     <div className="container-padding max-w-7xl mx-auto">
-                        {filteredResults.length > 0 ? (
+                        {isFetching ? (
+                            <div className="flex flex-col items-center justify-center py-20 grayscale opacity-50">
+                                <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />
+                                <p className="text-lg font-medium text-neutral-600">Searching for your domain...</p>
+                            </div>
+                        ) : filteredResults.length > 0 ? (
                             <div className="flex flex-col lg:flex-row gap-8">
                                 {/* Sidebar Filter */}
                                 <div className="lg:w-72 flex-shrink-0">
@@ -303,13 +293,15 @@ const DomainSearch = () => {
                                     <Globe2 className="w-12 h-12 text-primary-600" />
                                 </div>
                                 <h2 className="text-3xl font-bold text-neutral-900 mb-3">
-                                    No Results Found
+                                    {isError ? 'Something went wrong' : 'No Results Found'}
                                 </h2>
                                 <p className="text-neutral-600 mb-8">
-                                    Try adjusting your filters or search for a different domain name.
+                                    {isError
+                                        ? 'We encountered an error while searching. Please try again later.'
+                                        : 'Try adjusting your filters or search for a different domain name.'}
                                 </p>
                                 <Button variant="primary" onClick={() => window.location.href = '/search'}>
-                                    Start New Search
+                                    {isError ? 'Retry' : 'Start New Search'}
                                 </Button>
                             </div>
                         )}

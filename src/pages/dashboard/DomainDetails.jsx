@@ -1,39 +1,144 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Globe, Calendar, Shield, Server, RefreshCw, Save, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Globe, Calendar, Shield, Server, RefreshCw, Save, Plus, Trash2, Loader2, AlertTriangle } from 'lucide-react';
+import { toast } from 'react-toastify';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Card, { CardBody, CardHeader } from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import { mockDomains } from '../../mock/domains';
+import { useGetDomainDetailsQuery, useToggleAutoRenewMutation } from '../../redux/features/domain/domainApi';
+import { useGetDnsRecordsQuery, useAddDnsRecordMutation, useDeleteDnsRecordMutation } from '../../redux/features/dns/dnsApi';
 import { cn } from '../../lib/utils';
 
 const DomainDetails = () => {
-    const { id } = useParams();
-
-    const domain = mockDomains.find((d) => d.id === id);
+    const { id: domainName } = useParams();
+    const { data: domainData, isLoading, isError, refetch } = useGetDomainDetailsQuery(domainName);
+    const { data: dnsData, isLoading: isLoadingDns } = useGetDnsRecordsQuery(domainName);
+    const [toggleAutoRenew, { isLoading: isToggling }] = useToggleAutoRenewMutation();
+    const [addDnsRecord, { isLoading: isAdding }] = useAddDnsRecordMutation();
+    const [deleteDnsRecord, { isLoading: isDeleting }] = useDeleteDnsRecordMutation();
 
     const [activeTab, setActiveTab] = useState('general');
-    const [autoRenew, setAutoRenew] = useState(domain?.autoRenew || false);
-    const [nameservers, setNameservers] = useState(domain?.nameservers || []);
+    const [nameservers, setNameservers] = useState([]);
+    const [autoRenew, setAutoRenew] = useState(false);
 
-    if (!domain) {
+    // DNS Form State
+    const [isAddingRecord, setIsAddingRecord] = useState(false);
+    const [deletingRecordId, setDeletingRecordId] = useState(null);
+    const [newRecord, setNewRecord] = useState({
+        type: 'A',
+        name: '',
+        content: '',
+        ttl: 3600,
+        prio: 0
+    });
+
+    useEffect(() => {
+        if (domainData?.db) {
+            setNameservers(domainData.db.nameservers || []);
+            setAutoRenew(domainData.db.autoRenew);
+        }
+    }, [domainData]);
+
+    const handleToggleAutoRenew = async () => {
+        try {
+            const newStatus = !autoRenew;
+            setAutoRenew(newStatus); // Optimistic UI
+
+            await toggleAutoRenew({
+                domainName: domainData.db.domainName,
+                autoRenew: newStatus
+            }).unwrap();
+
+            toast.success(`Auto-renew ${newStatus ? 'enabled' : 'disabled'} successfully`);
+        } catch (err) {
+            setAutoRenew(!autoRenew); // Revert on failure
+            toast.error(err?.data?.message || 'Failed to toggle auto-renew');
+            console.error('Toggle failed:', err);
+        }
+    };
+
+    const handleAddRecord = async (e) => {
+        e.preventDefault();
+        try {
+            // Only include priority for MX and SRV records to avoid validation errors
+            const recordToSubmit = { ...newRecord };
+            if (newRecord.type !== 'MX' && newRecord.type !== 'SRV') {
+                delete recordToSubmit.prio;
+            }
+
+            await addDnsRecord({
+                domainName,
+                record: recordToSubmit
+            }).unwrap();
+
+            toast.success('DNS Record added successfully');
+            setIsAddingRecord(false);
+            setNewRecord({
+                type: 'A',
+                name: '',
+                content: '',
+                ttl: 3600,
+                prio: 0
+            });
+        } catch (err) {
+            toast.error(err?.data?.message || 'Failed to add DNS record');
+            console.error('Add record failed:', err);
+        }
+    };
+
+    const handleDeleteRecord = async (recordId) => {
+        if (!window.confirm('Are you sure you want to delete this DNS record?')) return;
+
+        try {
+            setDeletingRecordId(recordId);
+            await deleteDnsRecord({
+                domainName,
+                recordId
+            }).unwrap();
+
+            toast.success('DNS Record deleted successfully');
+        } catch (err) {
+            toast.error(err?.data?.message || 'Failed to delete DNS record');
+            console.error('Delete record failed:', err);
+        } finally {
+            setDeletingRecordId(null);
+        }
+    };
+
+    if (isLoading) {
         return (
             <DashboardLayout>
-                <div className="flex flex-col items-center justify-center min-h-[50vh] text-center">
-                    <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mb-4">
-                        <Globe className="w-8 h-8 text-neutral-400" />
-                    </div>
-                    <h1 className="text-2xl font-bold text-neutral-900 mb-2">Domain not found</h1>
-                    <p className="text-neutral-500 mb-6">The domain you are looking for does not exist or you don't have access.</p>
-                    <Link to="/dashboard/domains">
-                        <Button variant="primary">Back to My Domains</Button>
-                    </Link>
+                <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                    <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />
+                    <p className="text-neutral-500 font-medium">Loading domain details...</p>
                 </div>
             </DashboardLayout>
         );
     }
+
+    if (isError || !domainData?.db) {
+        return (
+            <DashboardLayout>
+                <div className="text-center py-20 bg-white rounded-2xl shadow-soft-md">
+                    <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                    <h1 className="text-2xl font-bold text-neutral-900 mb-2">Domain not found</h1>
+                    <p className="text-neutral-500 mb-8">The domain you are looking for does not exist or you don't have access.</p>
+                    <div className="flex justify-center gap-4">
+                        <Link to="/dashboard/domains">
+                            <Button variant="outline">Back to My Domains</Button>
+                        </Link>
+                        <Button variant="primary" onClick={() => refetch()}>
+                            Try Again
+                        </Button>
+                    </div>
+                </div>
+            </DashboardLayout>
+        );
+    }
+
+    const { db, inwx } = domainData;
 
     const tabs = [
         { id: 'general', label: 'Overview', icon: Globe },
@@ -52,34 +157,34 @@ const DomainDetails = () => {
                 <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                     <div className="flex items-start gap-4">
                         <div className="w-14 h-14 bg-white rounded-xl border border-neutral-200 shadow-sm flex items-center justify-center text-2xl font-bold text-neutral-700">
-                            {domain.name.charAt(0).toUpperCase()}
+                            {db.domainName.charAt(0).toUpperCase()}
                         </div>
                         <div>
                             <h1 className="text-3xl font-bold text-neutral-900 flex items-center gap-2">
-                                {domain.name}{domain.tld}
+                                {db.domainName}
                             </h1>
                             <div className="flex items-center gap-3 mt-1.5 text-sm text-neutral-500">
                                 <span className="flex items-center gap-1">
                                     <Calendar className="w-3.5 h-3.5" />
-                                    Expires {new Date(domain.expirationDate).toLocaleDateString()}
+                                    Expires {new Date(db.expiryDate).toLocaleDateString()}
                                 </span>
                                 <span className="w-1 h-1 bg-neutral-300 rounded-full" />
-                                <span>Registered {new Date(domain.registrationDate).toLocaleDateString()}</span>
+                                <span>Registered {new Date(db.registrationDate).toLocaleDateString()}</span>
                             </div>
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
                         <Badge
                             variant={
-                                domain.status === 'active'
+                                db.status?.toLowerCase() === 'active'
                                     ? 'success'
-                                    : domain.status === 'expiring-soon'
+                                    : db.status?.toLowerCase() === 'expiring-soon'
                                         ? 'warning'
                                         : 'neutral'
                             }
                             className="capitalize px-3 py-1 text-sm"
                         >
-                            {domain.status.replace('-', ' ')}
+                            {db.status?.toLowerCase().replace('_', ' ') || 'unknown'}
                         </Badge>
                         <Button variant="outline" size="sm" className="hidden md:flex">
                             <RefreshCw className="w-4 h-4 mr-2" />
@@ -123,19 +228,19 @@ const DomainDetails = () => {
                             <CardBody className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div>
                                     <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Domain Name</span>
-                                    <p className="text-lg font-medium text-neutral-900 mt-1">{domain.name}{domain.tld}</p>
+                                    <p className="text-lg font-medium text-neutral-900 mt-1">{db.domainName}</p>
                                 </div>
                                 <div>
                                     <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Registrar</span>
-                                    <p className="text-lg font-medium text-neutral-900 mt-1">SNC-Domain, Inc.</p>
+                                    <p className="text-lg font-medium text-neutral-900 mt-1">SNC-Domain (via INWX)</p>
                                 </div>
                                 <div>
                                     <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Registration Date</span>
-                                    <p className="text-neutral-900 mt-1">{new Date(domain.registrationDate).toLocaleDateString()}</p>
+                                    <p className="text-neutral-900 mt-1">{new Date(db.registrationDate).toLocaleDateString()}</p>
                                 </div>
                                 <div>
                                     <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Expiration Date</span>
-                                    <p className="text-neutral-900 mt-1">{new Date(domain.expirationDate).toLocaleDateString()}</p>
+                                    <p className="text-neutral-900 mt-1">{new Date(db.expiryDate).toLocaleDateString()}</p>
                                 </div>
                             </CardBody>
                         </Card>
@@ -164,7 +269,10 @@ const DomainDetails = () => {
                     <div className="space-y-6">
                         <Card className="border-none shadow-soft-md bg-gradient-to-br from-primary-900 to-primary-800 text-white">
                             <CardBody>
-                                <h3 className="text-lg font-bold mb-2">Auto-Renewal</h3>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h3 className="text-lg font-bold">Auto-Renewal</h3>
+                                    {isToggling && <Loader2 className="w-4 h-4 animate-spin text-white/50" />}
+                                </div>
                                 <p className="text-primary-100 text-sm mb-6">
                                     Don't lose your domain. Enable auto-renewal to keep it safe.
                                 </p>
@@ -174,7 +282,8 @@ const DomainDetails = () => {
                                         <input
                                             type="checkbox"
                                             checked={autoRenew}
-                                            onChange={(e) => setAutoRenew(e.target.checked)}
+                                            onChange={handleToggleAutoRenew}
+                                            disabled={isToggling}
                                             className="sr-only peer"
                                         />
                                         <div className="w-11 h-6 bg-primary-900/50 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-success-500"></div>
@@ -191,7 +300,11 @@ const DomainDetails = () => {
                                 </p>
                                 <div className="flex items-center justify-between">
                                     <span className="text-sm font-medium text-neutral-700">Transfer Lock</span>
-                                    <span className="px-2 py-1 bg-success-100 text-success-700 text-xs font-bold rounded">LOCKED</span>
+                                    {inwx?.transferLock ? (
+                                        <span className="px-2 py-1 bg-success-100 text-success-700 text-xs font-bold rounded">LOCKED</span>
+                                    ) : (
+                                        <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded">UNLOCKED</span>
+                                    )}
                                 </div>
                             </CardBody>
                         </Card>
@@ -207,12 +320,88 @@ const DomainDetails = () => {
                             <h2 className="text-lg font-bold text-neutral-900">DNS Management</h2>
                             <p className="text-sm text-neutral-500">Manage your DNS records (A, AAAA, CNAME, TXT, etc.)</p>
                         </div>
-                        <Button variant="primary" className="shadow-lg shadow-primary-500/20">
-                            <Plus className="w-4 h-4 mr-2" />
-                            Add Record
+                        <Button
+                            variant={isAddingRecord ? "outline" : "primary"}
+                            className={cn("shadow-lg", !isAddingRecord && "shadow-primary-500/20")}
+                            onClick={() => setIsAddingRecord(!isAddingRecord)}
+                        >
+                            {isAddingRecord ? (
+                                "Cancel"
+                            ) : (
+                                <>
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Add Record
+                                </>
+                            )}
                         </Button>
                     </CardHeader>
                     <CardBody>
+                        {isAddingRecord && (
+                            <form onSubmit={handleAddRecord} className="mb-8 p-6 bg-neutral-50 border border-neutral-100 rounded-2xl animate-in zoom-in-95 duration-200">
+                                <h3 className="text-sm font-bold text-neutral-900 mb-4 uppercase tracking-wider">Add New DNS Record</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-neutral-500 ml-1">Type</label>
+                                        <select
+                                            value={newRecord.type}
+                                            onChange={(e) => setNewRecord({ ...newRecord, type: e.target.value })}
+                                            className="w-full h-11 px-4 rounded-xl border border-neutral-200 bg-white focus:outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all text-sm"
+                                        >
+                                            {['A', 'AAAA', 'CNAME', 'MX', 'TXT', 'SRV', 'NS'].map(t => (
+                                                <option key={t} value={t}>{t}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-neutral-500 ml-1">Name (Host)</label>
+                                        <Input
+                                            placeholder="e.g. @ or www"
+                                            value={newRecord.name}
+                                            onChange={(e) => setNewRecord({ ...newRecord, name: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-neutral-500 ml-1">Value (Content)</label>
+                                        <Input
+                                            placeholder="e.g. 192.168.1.1"
+                                            value={newRecord.content}
+                                            onChange={(e) => setNewRecord({ ...newRecord, content: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-semibold text-neutral-500 ml-1">TTL (Seconds)</label>
+                                        <Input
+                                            type="number"
+                                            value={newRecord.ttl}
+                                            onChange={(e) => setNewRecord({ ...newRecord, ttl: parseInt(e.target.value) })}
+                                            required
+                                        />
+                                    </div>
+                                    {newRecord.type === 'MX' || newRecord.type === 'SRV' ? (
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-semibold text-neutral-500 ml-1">Priority</label>
+                                            <Input
+                                                type="number"
+                                                value={newRecord.prio}
+                                                onChange={(e) => setNewRecord({ ...newRecord, prio: parseInt(e.target.value) })}
+                                            />
+                                        </div>
+                                    ) : null}
+                                </div>
+                                <div className="flex justify-end gap-3">
+                                    <Button type="button" variant="ghost" onClick={() => setIsAddingRecord(false)}>
+                                        Cancel
+                                    </Button>
+                                    <Button type="submit" variant="primary" isLoading={isAdding}>
+                                        Save Record
+                                    </Button>
+                                </div>
+                            </form>
+                        )}
                         <div className="overflow-x-auto">
                             <table className="w-full text-left text-sm">
                                 <thead className="bg-neutral-50 text-neutral-500 uppercase font-semibold text-xs">
@@ -225,28 +414,52 @@ const DomainDetails = () => {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-neutral-100">
-                                    <tr className="group hover:bg-neutral-50/50 transition-colors">
-                                        <td className="px-4 py-3 font-medium text-neutral-900">A</td>
-                                        <td className="px-4 py-3 text-neutral-600">@</td>
-                                        <td className="px-4 py-3 text-neutral-600 font-mono text-xs">192.168.1.1</td>
-                                        <td className="px-4 py-3 text-neutral-500">Auto</td>
-                                        <td className="px-4 py-3 text-right">
-                                            <button className="text-neutral-400 hover:text-red-600 transition-colors p-1">
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </td>
-                                    </tr>
-                                    <tr className="group hover:bg-neutral-50/50 transition-colors">
-                                        <td className="px-4 py-3 font-medium text-neutral-900">CNAME</td>
-                                        <td className="px-4 py-3 text-neutral-600">www</td>
-                                        <td className="px-4 py-3 text-neutral-600 font-mono text-xs">@{domain.name}{domain.tld}</td>
-                                        <td className="px-4 py-3 text-neutral-500">Auto</td>
-                                        <td className="px-4 py-3 text-right">
-                                            <button className="text-neutral-400 hover:text-red-600 transition-colors p-1">
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
-                                        </td>
-                                    </tr>
+                                    {isLoadingDns ? (
+                                        <tr>
+                                            <td colSpan="5" className="px-4 py-8 text-center">
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <Loader2 className="w-6 h-6 animate-spin text-primary-600" />
+                                                    <p className="text-neutral-500">Loading records...</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ) : dnsData?.record && dnsData.record.length > 0 ? (
+                                        dnsData.record.map((record) => (
+                                            <tr key={record.id} className="group hover:bg-neutral-50/50 transition-colors">
+                                                <td className="px-4 py-3 font-medium text-neutral-900">
+                                                    <Badge variant="neutral" className="bg-neutral-100 text-neutral-700 border-none px-2 py-0.5 text-[10px] font-bold">
+                                                        {record.type}
+                                                    </Badge>
+                                                </td>
+                                                <td className="px-4 py-3 text-neutral-600 truncate max-w-[150px]" title={record.name}>
+                                                    {record.name}
+                                                </td>
+                                                <td className="px-4 py-3 text-neutral-600 font-mono text-xs truncate max-w-[300px]" title={record.content}>
+                                                    {record.content}
+                                                </td>
+                                                <td className="px-4 py-3 text-neutral-500">{record.ttl}</td>
+                                                <td className="px-4 py-3 text-right">
+                                                    <button
+                                                        onClick={() => handleDeleteRecord(record.id)}
+                                                        disabled={deletingRecordId === record.id}
+                                                        className="text-neutral-400 hover:text-red-600 transition-colors p-1 disabled:opacity-50"
+                                                    >
+                                                        {deletingRecordId === record.id ? (
+                                                            <Loader2 className="w-4 h-4 animate-spin" />
+                                                        ) : (
+                                                            <Trash2 className="w-4 h-4" />
+                                                        )}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))
+                                    ) : (
+                                        <tr>
+                                            <td colSpan="5" className="px-4 py-8 text-center text-neutral-500">
+                                                No DNS records found for this domain.
+                                            </td>
+                                        </tr>
+                                    )}
                                 </tbody>
                             </table>
                         </div>
@@ -267,8 +480,8 @@ const DomainDetails = () => {
                                 <Shield className="w-5 h-5" />
                             </div>
                             <div className="text-sm text-primary-900">
-                                <p className="font-semibold">Using Default Nameservers</p>
-                                <p className="opacity-80 mt-0.5">We are currently managing your DNS automatically.</p>
+                                <p className="font-semibold">{db.nameservers?.every(ns => ns.includes('inwx')) ? 'Using Default Nameservers' : 'Using Custom Nameservers'}</p>
+                                <p className="opacity-80 mt-0.5">We are {db.nameservers?.every(ns => ns.includes('inwx')) ? 'currently' : 'not'} managing your DNS automatically.</p>
                             </div>
                         </div>
 
@@ -286,7 +499,12 @@ const DomainDetails = () => {
                                     }}
                                 />
                             ))}
-                            <Button variant="outline" size="sm" className="w-full border-dashed border-2 text-neutral-500 hover:text-primary-600 hover:border-primary-200">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="w-full border-dashed border-2 text-neutral-500 hover:text-primary-600 hover:border-primary-200"
+                                onClick={() => setNameservers([...nameservers, ''])}
+                            >
                                 <Plus className="w-4 h-4 mr-2" />
                                 Add Another Nameserver
                             </Button>
