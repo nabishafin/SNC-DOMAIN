@@ -10,6 +10,7 @@ import Login from '../pages/auth/Login';
 import Register from '../pages/auth/Register';
 import ForgotPassword from '../pages/auth/ForgotPassword';
 import Checkout from '../pages/checkout/Checkout';
+import PaymentSuccess from '../pages/checkout/PaymentSuccess';
 
 // Dashboard Pages
 import Overview from '../pages/dashboard/Overview';
@@ -44,6 +45,7 @@ const AppRoutes = () => {
 
             {/* Checkout Routes */}
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/checkout/success/:orderId" element={<PaymentSuccess />} />
 
             {/* 404 Redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />

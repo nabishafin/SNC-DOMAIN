@@ -47,14 +47,15 @@ const DomainSearch = () => {
     };
 
     const handleAddToCart = (result) => {
+        const fullName = result.tld ? `${result.domain}${result.tld}` : result.domain;
         dispatch(addToCart({
-            id: `${result.domain}${result.tld}`,
-            name: `${result.domain}${result.tld}`,
+            id: fullName,
+            name: fullName,
             price: result.price,
             year: 1,
             type: 'registration'
         }));
-        addToast('success', 'Added to Cart', `${result.domain}${result.tld} added.`);
+        addToast('success', 'Added to Cart', `${fullName} added.`);
     };
 
     const handleQuickSearch = (tldExtension) => {

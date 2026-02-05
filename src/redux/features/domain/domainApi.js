@@ -73,6 +73,22 @@ export const domainApi = baseApi.injectEndpoints({
                 "dashboardStats"
             ],
         }),
+        updateNameservers: builder.mutation({
+            query: ({ domainName, nameservers }) => ({
+                url: `/domains/update-nameservers`,
+                method: "POST",
+                body: { domainName, nameservers },
+            }),
+            invalidatesTags: (result, error, arg) => [{ type: "domains", id: arg.domainName }],
+        }),
+        registerDomain: builder.mutation({
+            query: (registrationData) => ({
+                url: `/domains/register`,
+                method: "POST",
+                body: registrationData,
+            }),
+            invalidatesTags: ["domains", "dashboardStats"],
+        }),
     }),
 });
 
@@ -82,4 +98,6 @@ export const {
     useGetMyDomainsQuery,
     useGetDomainDetailsQuery,
     useToggleAutoRenewMutation,
+    useUpdateNameserversMutation,
+    useRegisterDomainMutation,
 } = domainApi;

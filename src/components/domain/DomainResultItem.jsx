@@ -9,7 +9,9 @@ const DomainResultItem = ({ result, onAddToCart }) => {
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
                     <h3 className="text-lg font-semibold text-neutral-900 break-all">
                         {result.domain}
-                        <span className="text-primary-600">{result.tld}</span>
+                        {result.tld && result.tld !== 'undefined' && (
+                            <span className="text-primary-600">{result.tld}</span>
+                        )}
                     </h3>
                     <div className="flex items-center gap-2">
                         <Badge variant={result.available ? 'success' : 'error'} size="sm">

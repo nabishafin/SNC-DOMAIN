@@ -7,7 +7,7 @@ import Card, { CardBody, CardHeader } from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import { useGetDomainDetailsQuery, useToggleAutoRenewMutation } from '../../redux/features/domain/domainApi';
+import { useGetDomainDetailsQuery, useToggleAutoRenewMutation, useUpdateNameserversMutation } from '../../redux/features/domain/domainApi';
 import { useGetDnsRecordsQuery, useAddDnsRecordMutation, useDeleteDnsRecordMutation } from '../../redux/features/dns/dnsApi';
 import { cn } from '../../lib/utils';
 
@@ -18,6 +18,7 @@ const DomainDetails = () => {
     const [toggleAutoRenew, { isLoading: isToggling }] = useToggleAutoRenewMutation();
     const [addDnsRecord, { isLoading: isAdding }] = useAddDnsRecordMutation();
     const [deleteDnsRecord, { isLoading: isDeleting }] = useDeleteDnsRecordMutation();
+    const [updateNameservers, { isLoading: isUpdatingNameservers }] = useUpdateNameserversMutation();
 
     const [activeTab, setActiveTab] = useState('general');
     const [nameservers, setNameservers] = useState([]);
@@ -105,6 +106,36 @@ const DomainDetails = () => {
         } finally {
             setDeletingRecordId(null);
         }
+    };
+
+    const handleUpdateNameservers = async () => {
+        // Filter out empty nameservers
+        const filteredNs = nameservers.filter(ns => ns.trim() !== '');
+
+        if (filteredNs.length < 2) {
+            toast.error('At least 2 nameservers are required');
+            return;
+        }
+
+        try {
+            await updateNameservers({
+                domainName,
+                nameservers: filteredNs
+            }).unwrap();
+
+            toast.success('Nameservers updated successfully');
+        } catch (err) {
+            toast.error(err?.data?.message || 'Failed to update nameservers');
+            console.error('Update NS failed:', err);
+        }
+    };
+
+    const handleRemoveNameserver = (index) => {
+        if (nameservers.length <= 2) {
+            toast.warning('A minimum of 2 nameservers is usually required');
+        }
+        const newNs = nameservers.filter((_, i) => i !== index);
+        setNameservers(newNs);
     };
 
     if (isLoading) {
@@ -487,30 +518,49 @@ const DomainDetails = () => {
 
                         <div className="space-y-4">
                             {nameservers.map((ns, index) => (
-                                <Input
-                                    key={index}
-                                    label={`Nameserver ${index + 1}`}
-                                    value={ns}
-                                    placeholder="ns1.snc-domain.com"
-                                    onChange={(e) => {
-                                        const newNs = [...nameservers];
-                                        newNs[index] = e.target.value;
-                                        setNameservers(newNs);
-                                    }}
-                                />
+                                <div key={index} className="flex items-end gap-3 group">
+                                    <div className="flex-1">
+                                        <Input
+                                            label={index === 0 ? "Nameservers" : ""}
+                                            value={ns}
+                                            placeholder={`ns${index + 1}.snc-domain.com`}
+                                            onChange={(e) => {
+                                                const newNs = [...nameservers];
+                                                newNs[index] = e.target.value;
+                                                setNameservers(newNs);
+                                            }}
+                                        />
+                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        size="md"
+                                        className="mb-1 text-neutral-400 hover:text-red-500 hover:bg-red-50"
+                                        onClick={() => handleRemoveNameserver(index)}
+                                        disabled={nameservers.length <= 1}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </div>
                             ))}
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="w-full border-dashed border-2 text-neutral-500 hover:text-primary-600 hover:border-primary-200"
+                                className="w-full border-dashed border-2 text-neutral-500 hover:text-primary-600 hover:border-primary-200 mt-2"
                                 onClick={() => setNameservers([...nameservers, ''])}
+                                disabled={nameservers.length >= 4}
                             >
                                 <Plus className="w-4 h-4 mr-2" />
                                 Add Another Nameserver
                             </Button>
                         </div>
                         <div className="mt-8 pt-6 border-t border-neutral-100 flex justify-end">
-                            <Button variant="primary" size="lg" className="shadow-lg shadow-primary-500/20">
+                            <Button
+                                variant="primary"
+                                size="lg"
+                                className="shadow-lg shadow-primary-500/20"
+                                onClick={handleUpdateNameservers}
+                                isLoading={isUpdatingNameservers}
+                            >
                                 <Save className="w-4 h-4 mr-2" />
                                 Save Changes
                             </Button>
