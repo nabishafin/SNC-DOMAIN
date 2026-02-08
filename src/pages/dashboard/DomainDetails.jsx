@@ -7,7 +7,7 @@ import Card, { CardBody, CardHeader } from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
-import { useGetDomainDetailsQuery, useToggleAutoRenewMutation, useUpdateNameserversMutation } from '../../redux/features/domain/domainApi';
+import { useGetDomainDetailsQuery, useToggleAutoRenewMutation, useUpdateNameserversMutation, useToggleWhoisPrivacyMutation } from '../../redux/features/domain/domainApi';
 import { useGetDnsRecordsQuery, useAddDnsRecordMutation, useDeleteDnsRecordMutation } from '../../redux/features/dns/dnsApi';
 import { cn } from '../../lib/utils';
 
@@ -16,6 +16,7 @@ const DomainDetails = () => {
     const { data: domainData, isLoading, isError, refetch } = useGetDomainDetailsQuery(domainName);
     const { data: dnsData, isLoading: isLoadingDns } = useGetDnsRecordsQuery(domainName);
     const [toggleAutoRenew, { isLoading: isToggling }] = useToggleAutoRenewMutation();
+    const [toggleWhoisPrivacy, { isLoading: isTogglingPrivacy }] = useToggleWhoisPrivacyMutation();
     const [addDnsRecord, { isLoading: isAdding }] = useAddDnsRecordMutation();
     const [deleteDnsRecord, { isLoading: isDeleting }] = useDeleteDnsRecordMutation();
     const [updateNameservers, { isLoading: isUpdatingNameservers }] = useUpdateNameserversMutation();
@@ -23,6 +24,7 @@ const DomainDetails = () => {
     const [activeTab, setActiveTab] = useState('general');
     const [nameservers, setNameservers] = useState([]);
     const [autoRenew, setAutoRenew] = useState(false);
+    const [whoisPrivacy, setWhoisPrivacy] = useState(false);
 
     // DNS Form State
     const [isAddingRecord, setIsAddingRecord] = useState(false);
@@ -39,6 +41,7 @@ const DomainDetails = () => {
         if (domainData?.db) {
             setNameservers(domainData.db.nameservers || []);
             setAutoRenew(domainData.db.autoRenew);
+            setWhoisPrivacy(domainData.db.whoisPrivacy || false);
         }
     }, [domainData]);
 
@@ -57,6 +60,24 @@ const DomainDetails = () => {
             setAutoRenew(!autoRenew); // Revert on failure
             toast.error(err?.data?.message || 'Failed to toggle auto-renew');
             console.error('Toggle failed:', err);
+        }
+    };
+
+    const handleToggleWhoisPrivacy = async () => {
+        try {
+            const newStatus = !whoisPrivacy;
+            setWhoisPrivacy(newStatus); // Optimistic UI
+
+            await toggleWhoisPrivacy({
+                domainName: domainData.db.domainName,
+                whoisPrivacy: newStatus
+            }).unwrap();
+
+            toast.success(`WHOIS Privacy ${newStatus ? 'enabled' : 'disabled'} successfully`);
+        } catch (err) {
+            setWhoisPrivacy(!whoisPrivacy); // Revert on failure
+            toast.error(err?.data?.message || 'Failed to toggle WHOIS privacy');
+            console.error('Toggle privacy failed:', err);
         }
     };
 
@@ -283,15 +304,28 @@ const DomainDetails = () => {
                             <CardBody>
                                 <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl border border-neutral-100">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-white rounded-lg shadow-sm">
-                                            <Shield className="w-5 h-5 text-success-600" />
+                                        <div className={cn("p-2 rounded-lg shadow-sm", whoisPrivacy ? "bg-success-50" : "bg-neutral-100")}>
+                                            <Shield className={cn("w-5 h-5", whoisPrivacy ? "text-success-600" : "text-neutral-400")} />
                                         </div>
                                         <div>
-                                            <p className="font-semibold text-neutral-900">Privacy Protection is On</p>
-                                            <p className="text-xs text-neutral-500">Your personal information is hidden from WHOIS.</p>
+                                            <p className="font-semibold text-neutral-900">
+                                                Privacy Protection is {whoisPrivacy ? 'On' : 'Off'}
+                                            </p>
+                                            <p className="text-xs text-neutral-500">
+                                                {whoisPrivacy
+                                                    ? 'Your personal information is hidden from WHOIS.'
+                                                    : 'Your contact details are publicly visible in WHOIS records.'}
+                                            </p>
                                         </div>
                                     </div>
-                                    <Button variant="outline" size="sm">Manage</Button>
+                                    <Button
+                                        variant={whoisPrivacy ? "success" : "primary"}
+                                        size="sm"
+                                        onClick={handleToggleWhoisPrivacy}
+                                        isLoading={isTogglingPrivacy}
+                                    >
+                                        {whoisPrivacy ? 'Disable Privacy' : 'Enable Privacy'}
+                                    </Button>
                                 </div>
                             </CardBody>
                         </Card>

@@ -81,6 +81,44 @@ export const domainApi = baseApi.injectEndpoints({
             }),
             invalidatesTags: (result, error, arg) => [{ type: "domains", id: arg.domainName }],
         }),
+        toggleWhoisPrivacy: builder.mutation({
+            query: ({ domainName, whoisPrivacy }) => ({
+                url: `/domains/toggle-whois-privacy`,
+                method: "POST",
+                body: { domainName, whoisPrivacy },
+            }),
+            async onQueryStarted({ domainName, whoisPrivacy }, { dispatch, queryFulfilled }) {
+                // Optimistic update for "Get My Domains"
+                const patchResult = dispatch(
+                    domainApi.util.updateQueryData("getMyDomains", undefined, (draft) => {
+                        const domains = draft?.myDomains || draft;
+                        const domain = Array.isArray(domains) ? domains.find(d => d.domainName === domainName) : null;
+                        if (domain) {
+                            domain.whoisPrivacy = whoisPrivacy;
+                        }
+                    })
+                );
+
+                // Optimistic update for "Get Domain Details"
+                const patchDetails = dispatch(
+                    domainApi.util.updateQueryData("getDomainDetails", domainName, (draft) => {
+                        if (draft?.db) {
+                            draft.db.whoisPrivacy = whoisPrivacy;
+                        } else if (draft) {
+                            draft.whoisPrivacy = whoisPrivacy;
+                        }
+                    })
+                );
+
+                try {
+                    await queryFulfilled;
+                } catch {
+                    patchResult.undo();
+                    patchDetails.undo();
+                }
+            },
+            invalidatesTags: (result, error, arg) => [{ type: "domains", id: arg.domainName }],
+        }),
         registerDomain: builder.mutation({
             query: (registrationData) => ({
                 url: `/domains/register`,
@@ -98,6 +136,7 @@ export const {
     useGetMyDomainsQuery,
     useGetDomainDetailsQuery,
     useToggleAutoRenewMutation,
+    useToggleWhoisPrivacyMutation,
     useUpdateNameserversMutation,
     useRegisterDomainMutation,
 } = domainApi;
