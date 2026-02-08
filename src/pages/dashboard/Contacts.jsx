@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Plus, MoreHorizontal, Trash2, Edit2, Loader2, Globe } from 'lucide-react';
-import { useGetContactsQuery, useCreateContactMutation, useUpdateContactMutation, useDeleteContactMutation, useGetDomainWhoisQuery, useAssignWhoisRolesMutation } from '../../redux/features/contact/contactApi';
-import { useGetMyDomainsQuery } from '../../redux/features/domain/domainApi';
+import { useGetContactsQuery, useCreateContactMutation, useUpdateContactMutation, useDeleteContactMutation, useGetWhoisDomainsQuery, useGetSavedContactsOptionsQuery, useGetDomainWhoisQuery, useAssignWhoisRolesMutation, useRefreshWhoisMutation } from '../../redux/features/contact/contactApi';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Card, { CardBody } from '../../components/ui/Card';
 import Badge from '../../components/ui/Badge';
@@ -19,10 +18,12 @@ const Contacts = () => {
     const [deleteContact, { isLoading: isDeleting }] = useDeleteContactMutation();
 
     // Domain WHOIS state
-    const { data: myDomains = [] } = useGetMyDomainsQuery();
+    const { data: whoisDomains = [] } = useGetWhoisDomainsQuery();
+    const { data: savedContactsOptions = [] } = useGetSavedContactsOptionsQuery();
     const [selectedDomain, setSelectedDomain] = useState('');
     const { data: domainWhois, isFetching: isFetchingWhois } = useGetDomainWhoisQuery(selectedDomain, { skip: !selectedDomain });
     const [assignRoles, { isLoading: isAssigning }] = useAssignWhoisRolesMutation();
+    const [refreshWhois] = useRefreshWhoisMutation();
 
     const [activeTab, setActiveTab] = useState('contacts'); // 'contacts' or 'assignments'
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -88,7 +89,9 @@ const Contacts = () => {
             if (payload.type !== 'ORG' || !payload.org) {
                 delete payload.org;
             }
-            await updateContact({ id: editingContact.id, ...payload }).unwrap();
+            // Use normalized id or fallback to _id
+            const contactId = editingContact.id || editingContact._id;
+            await updateContact({ id: contactId, ...payload }).unwrap();
             setIsEditModalOpen(false);
             setEditingContact(null);
             addToast('success', 'Contact Updated', 'Contact information has been saved.');
@@ -97,10 +100,10 @@ const Contacts = () => {
         }
     };
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (idOr_id) => {
         if (confirm('Are you sure you want to delete this contact? It can only be deleted if it is not currently assigned to any domain.')) {
             try {
-                await deleteContact(id).unwrap();
+                await deleteContact(idOr_id).unwrap();
                 addToast('success', 'Contact Deleted', 'The contact has been removed successfully.');
             } catch (err) {
                 addToast('error', 'Delete Failed', err?.data?.message || 'Could not delete contact. It might be in use.');
@@ -119,21 +122,24 @@ const Contacts = () => {
                 [roleKey]: handleId
             };
 
-            // Backend expects inwxId (handle) for roles
-            const selectedContact = contacts.find(c => c.id === handleId);
-            const inwxId = selectedContact?.inwxId || handleId;
-
             await assignRoles({
-                domainName: selectedDomain,
-                registrant: roleKey === 'registrant' ? inwxId : roles.registrant,
-                admin: roleKey === 'admin' ? inwxId : roles.admin,
-                tech: roleKey === 'tech' ? inwxId : roles.tech,
-                billing: roleKey === 'billing' ? inwxId : roles.billing
+                domain: selectedDomain,
+                ...roles
             }).unwrap();
 
             addToast('success', 'Roles Assigned', `WHOIS roles for ${selectedDomain} have been updated.`);
         } catch (err) {
             addToast('error', 'Assignment Failed', err?.data?.message || 'Could not assign roles');
+        }
+    };
+
+    const handleRefreshWhois = async () => {
+        if (!selectedDomain) return;
+        try {
+            await refreshWhois(selectedDomain).unwrap();
+            addToast('success', 'WHOIS Refreshed', `Data for ${selectedDomain} is now in sync with the registry.`);
+        } catch (err) {
+            addToast('error', 'Refresh Failed', err?.data?.message || 'Could not sync WHOIS data');
         }
     };
 
@@ -287,18 +293,18 @@ const Contacts = () => {
                                     onChange={(e) => setSelectedDomain(e.target.value)}
                                 >
                                     <option value="">Select a domain...</option>
-                                    {myDomains.map(d => (
-                                        <option key={d.domainName} value={d.domainName}>{d.domainName}</option>
+                                    {whoisDomains.map(d => (
+                                        <option key={d.domain} value={d.domain}>{d.domain}</option>
                                     ))}
                                 </select>
                                 <Button
                                     variant="primary"
                                     disabled={!selectedDomain || isFetchingWhois}
                                     className="sm:w-auto"
-                                    onClick={() => setSelectedDomain(selectedDomain)} // Re-trigger refetch if needed
+                                    onClick={handleRefreshWhois}
                                 >
                                     {isFetchingWhois ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                                    {isFetchingWhois ? 'Fetching...' : 'Refresh WHOIS Information'}
+                                    {isFetchingWhois ? 'Fetching...' : 'Manual Sync from Registry'}
                                 </Button>
                             </div>
                         </CardBody>
@@ -326,15 +332,18 @@ const Contacts = () => {
                                                 disabled={isAssigning}
                                             >
                                                 <option value="">Select Contact...</option>
-                                                {contacts.map(c => (
-                                                    <option key={c.id || c._id} value={c.inwxId || c.id || c._id}>{c.name}</option>
+                                                {savedContactsOptions.map(c => (
+                                                    <option key={c.id} value={c.id}>{c.label}</option>
                                                 ))}
                                             </select>
 
-                                            {currentContact && typeof currentContact === 'object' && (
+                                            {currentContact && (
                                                 <div className="mt-3 text-xs text-neutral-500 space-y-1">
-                                                    <p className="font-bold text-neutral-700 truncate">{currentContact.name}</p>
-                                                    <p className="truncate">{currentContact.email}</p>
+                                                    <p className="font-bold text-neutral-700 truncate">{currentContact.label || currentContact.name || 'Unknown Contact'}</p>
+                                                    {/* Only show email/other fields if they are available and NOT redundant with the label */}
+                                                    {!currentContact.label && currentContact.email && !String(currentContact.email).includes('undefined') && (
+                                                        <p className="truncate">{currentContact.email}</p>
+                                                    )}
                                                 </div>
                                             )}
                                         </CardBody>

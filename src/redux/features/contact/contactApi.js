@@ -7,7 +7,13 @@ export const contactApi = baseApi.injectEndpoints({
                 url: "/contacts",
                 method: "GET",
             }),
-            transformResponse: (response) => response?.data || response,
+            transformResponse: (response) => {
+                const data = response?.data || response || [];
+                return data.map(contact => ({
+                    ...contact,
+                    id: contact.id || contact._id // Normalize ID
+                }));
+            },
             providesTags: (result) =>
                 result
                     ? [
@@ -45,24 +51,92 @@ export const contactApi = baseApi.injectEndpoints({
                 { type: "contacts", id: "LIST" },
             ],
         }),
-        getDomainWhois: builder.query({
-            query: (domain) => ({
-                url: `/domains/${domain}/contacts`,
+        getWhoisDomains: builder.query({
+            query: () => ({
+                url: "/domains/with-whois",
                 method: "GET",
             }),
-            transformResponse: (response) => response?.data || response,
+            transformResponse: (response) => response?.domains || [],
+            providesTags: [{ type: "domains", id: "WHOIS-LIST" }],
+        }),
+        getSavedContactsOptions: builder.query({
+            query: () => ({
+                url: "/contacts/saved",
+                method: "GET",
+            }),
+            transformResponse: (response) => {
+                const contacts = response?.contacts || [];
+                return contacts.map(c => {
+                    const id = c.id || c._id;
+                    let label = c.label || `${c.name || ''} – ${c.email || ''}`;
+                    if (label.includes('undefined')) {
+                        label = label.replace(/undefined/g, '').replace(/ – /g, '').trim() || 'Unnamed Contact';
+                    }
+                    return {
+                        ...c,
+                        id,
+                        label
+                    };
+                });
+            },
+            providesTags: [{ type: "contacts", id: "OPTIONS" }],
+        }),
+        getDomainWhois: builder.query({
+            query: (domain) => ({
+                url: `/domains/${domain}/whois`,
+                method: "GET",
+            }),
+            transformResponse: (response) => {
+                const assignments = response?.assignments || response?.data || response || {};
+                const normalized = {};
+
+                // Normalize each role
+                ['registrant', 'admin', 'tech', 'billing'].forEach(role => {
+                    const contact = assignments[role];
+                    if (contact) {
+                        const id = contact.id || contact._id || contact.inwxId;
+                        let label = contact.label || `${contact.name || ''} – ${contact.email || ''}`;
+                        let name = contact.name || '';
+                        let email = contact.email || '';
+
+                        // Strip "undefined" from everything
+                        const clean = (str) => String(str || '').replace(/undefined/g, '').replace(/ – /g, '').trim();
+
+                        if (String(label).includes('undefined')) label = clean(label);
+                        if (String(name).includes('undefined')) name = clean(name);
+                        if (String(email).includes('undefined')) email = clean(email);
+
+                        normalized[role] = {
+                            ...contact,
+                            id,
+                            label: label || 'Unnamed Contact',
+                            name: name || 'Unnamed',
+                            email: email || ''
+                        };
+                    }
+                });
+
+                return normalized;
+            },
             providesTags: (result, error, domain) => [{ type: "domains", id: `WHOIS-${domain}` }],
         }),
         assignWhoisRoles: builder.mutation({
-            query: (assignmentData) => ({
-                url: `/domains/contacts`,
+            query: ({ domain, ...roles }) => ({
+                url: `/domains/${domain}/whois`,
                 method: "PUT",
-                body: assignmentData,
+                body: { ...roles, domainName: domain },
             }),
-            invalidatesTags: (result, error, { domainName }) => [
-                { type: "domains", id: `WHOIS-${domainName}` },
-                { type: "domains", id: domainName },
+            invalidatesTags: (result, error, { domain }) => [
+                { type: "domains", id: `WHOIS-${domain}` },
+                { type: "domains", id: domain },
             ],
+        }),
+        refreshWhois: builder.mutation({
+            query: (domain) => ({
+                url: `/domains/${domain}/whois/refresh`,
+                method: "POST",
+            }),
+            invalidatesTags: (result, error, domain) => [{ type: "domains", id: `WHOIS-${domain}` }],
         }),
     }),
 });
@@ -72,7 +146,9 @@ export const {
     useCreateContactMutation,
     useUpdateContactMutation,
     useDeleteContactMutation,
+    useGetWhoisDomainsQuery,
+    useGetSavedContactsOptionsQuery,
     useGetDomainWhoisQuery,
-    useLazyGetDomainWhoisQuery,
     useAssignWhoisRolesMutation,
+    useRefreshWhoisMutation,
 } = contactApi;
