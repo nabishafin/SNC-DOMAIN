@@ -201,16 +201,51 @@ const Header = () => {
                             ))}
                             <div className="h-px bg-neutral-100 my-2" />
                             <div className="flex flex-col gap-3">
-                                <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                                    <Button variant="outline" size="md" className="w-full justify-center">
-                                        Log in
-                                    </Button>
-                                </Link>
-                                <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
-                                    <Button variant="primary" size="md" className="w-full justify-center shadow-lg shadow-primary-500/20">
-                                        Get Started
-                                    </Button>
-                                </Link>
+                                {isAuthenticated && user ? (
+                                    <>
+                                        <div className="px-2 py-2 border-b border-neutral-100 mb-2">
+                                            <p className="text-sm font-bold text-neutral-900">{user.firstName} {user.lastName}</p>
+                                            <p className="text-xs text-neutral-500 truncate">{user.email}</p>
+                                        </div>
+                                        <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                                            <Button variant="outline" size="md" className="w-full justify-start gap-2">
+                                                <LayoutDashboard className="w-4 h-4" />
+                                                Dashboard
+                                            </Button>
+                                        </Link>
+                                        <Link to="/dashboard/settings" onClick={() => setMobileMenuOpen(false)}>
+                                            <Button variant="outline" size="md" className="w-full justify-start gap-2">
+                                                <User className="w-4 h-4" />
+                                                Profile Settings
+                                            </Button>
+                                        </Link>
+                                        <Button
+                                            variant="ghost"
+                                            size="md"
+                                            className="w-full justify-start gap-2 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                            onClick={() => {
+                                                handleLogout();
+                                                setMobileMenuOpen(false);
+                                            }}
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                            Logout
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                                            <Button variant="outline" size="md" className="w-full justify-center">
+                                                Log in
+                                            </Button>
+                                        </Link>
+                                        <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                                            <Button variant="primary" size="md" className="w-full justify-center shadow-lg shadow-primary-500/20">
+                                                Get Started
+                                            </Button>
+                                        </Link>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
