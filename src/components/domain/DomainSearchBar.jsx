@@ -1,13 +1,20 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Button from '../ui/Button';
 import { cn } from '../../lib/utils';
 
-const DomainSearchBar = ({ className, initialValue = '' }) => {
+const DomainSearchBar = ({ className, initialValue = '', initialTld = '.com' }) => {
     const [domain, setDomain] = useState(initialValue);
-    const [selectedTld, setSelectedTld] = useState('.com');
+    const [selectedTld, setSelectedTld] = useState(initialTld);
     const navigate = useNavigate();
+
+    // Sync selectedTld with initialTld prop
+    useEffect(() => {
+        if (initialTld) {
+            setSelectedTld(initialTld);
+        }
+    }, [initialTld]);
 
     const popularTlds = ['.com', '.net', '.org', '.io', '.co', '.ai'];
 

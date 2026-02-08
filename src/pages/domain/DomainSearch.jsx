@@ -148,7 +148,10 @@ const DomainSearch = () => {
 
                                 {/* Search Bar */}
                                 <div className="max-w-2xl mx-auto lg:mx-0">
-                                    <DomainSearchBar initialValue={searchParams.get('q') || ''} />
+                                    <DomainSearchBar
+                                        initialValue={searchParams.get('q') || ''}
+                                        initialTld={searchParams.get('tld') || '.com'}
+                                    />
                                 </div>
                             </motion.div>
                         </div>

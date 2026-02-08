@@ -7,6 +7,7 @@ import AppRoutes from './routes/AppRoutes';
 import { ToastProvider } from './context/ToastContext';
 import CartDrawer from './pages/checkout/CartDrawer';
 import GlobalScroll from './components/layout/GlobalScroll';
+import ScrollToTop from './components/common/ScrollToTop';
 import CookieConsentModal from './components/common/CookieConsentModal';
 
 function App() {
@@ -14,6 +15,7 @@ function App() {
     <ToastProvider>
       <HelmetProvider>
         <BrowserRouter>
+          <ScrollToTop />
           <GlobalScroll />
           <AppRoutes />
           <CartDrawer />

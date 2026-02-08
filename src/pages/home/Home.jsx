@@ -324,7 +324,9 @@ const Home = () => {
                                     <div className="text-4xl font-black">{ext.price}</div>
                                     <div className="text-[10px] uppercase font-black opacity-40">Per Year</div>
                                 </div>
-                                <Button variant="primary" size="sm" className="w-full h-10 rounded-xl text-xs font-black">Register</Button>
+                                <Link to={`/search?tld=${ext.name}`}>
+                                    <Button variant="primary" size="sm" className="w-full h-10 rounded-xl text-xs font-black">Register</Button>
+                                </Link>
                             </motion.div>
                         ))}
                     </div>
