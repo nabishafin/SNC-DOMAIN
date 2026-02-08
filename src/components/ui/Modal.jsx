@@ -2,7 +2,16 @@ import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
-const Modal = ({ isOpen, onClose, title, children, className, description }) => {
+const Modal = ({ isOpen, onClose, title, children, className, description, size = 'md' }) => {
+    const sizes = {
+        sm: 'max-w-sm',
+        md: 'max-w-md',
+        lg: 'max-w-lg',
+        xl: 'max-w-2xl',
+        '2xl': 'max-w-4xl',
+        full: 'max-w-[95vw]'
+    };
+
     useEffect(() => {
         const handleEscape = (e) => {
             if (e.key === 'Escape') onClose();
@@ -22,7 +31,7 @@ const Modal = ({ isOpen, onClose, title, children, className, description }) => 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             {/* Backdrop */}
             <div
                 className="fixed inset-0 bg-neutral-900/40 backdrop-blur-sm transition-opacity animate-in fade-in duration-200"
@@ -31,11 +40,12 @@ const Modal = ({ isOpen, onClose, title, children, className, description }) => 
 
             {/* Modal Content */}
             <div className={cn(
-                "relative bg-white rounded-2xl shadow-2xl w-full max-w-lg transform transition-all animate-in zoom-in-95 duration-200 border border-neutral-100",
+                "relative bg-white rounded-2xl shadow-2xl w-full transform transition-all animate-in zoom-in-95 duration-200 border border-neutral-100 flex flex-col max-h-[90vh]",
+                sizes[size],
                 className
             )}>
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 flex-shrink-0">
                     <div>
                         <h3 className="text-lg font-bold text-neutral-900">{title}</h3>
                         {description && (
@@ -51,7 +61,7 @@ const Modal = ({ isOpen, onClose, title, children, className, description }) => 
                 </div>
 
                 {/* Body */}
-                <div className="p-6">
+                <div className="p-6 overflow-y-auto">
                     {children}
                 </div>
             </div>

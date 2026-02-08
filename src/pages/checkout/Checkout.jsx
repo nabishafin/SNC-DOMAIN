@@ -5,6 +5,7 @@ import { CheckCircle, Lock } from 'lucide-react';
 import { clearCart, selectCartTotal } from '../../redux/slices/cartSlice';
 import { useToast } from '../../context/ToastContext';
 import { useRegisterDomainMutation } from '../../redux/features/domain/domainApi';
+import { useOrderSslMutation } from '../../redux/features/ssl/sslApi';
 import { useInitiatePaymentMutation } from '../../redux/features/payment/paymentApi';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -20,8 +21,11 @@ const Checkout = () => {
     const { addToast } = useToast();
 
     // Mutations
-    const [registerDomain, { isLoading: isRegistering }] = useRegisterDomainMutation();
+    const [registerDomain, { isLoading: isRegisteringDomain }] = useRegisterDomainMutation();
+    const [orderSsl, { isLoading: isOrderingSsl }] = useOrderSslMutation();
     const [initiatePayment, { isLoading: isInitiatingPayment }] = useInitiatePaymentMutation();
+
+    const isRegistering = isRegisteringDomain || isOrderingSsl;
 
     const [step, setStep] = useState('review'); // review -> payment
     const [orderData, setOrderData] = useState(null);
@@ -35,28 +39,39 @@ const Checkout = () => {
         }
     }, [isAuthenticated, items, navigate, addToast]);
 
-    const handleRegister = async (e) => {
+    const handleCreateOrder = async (e) => {
         e.preventDefault();
 
         if (items.length === 0) return;
 
         try {
-            // For now, we handle registration domain-by-domain as per the API signature
-            // Taking the first item to register
+            // For now, we handle transactions item-by-item to match the backend expectations
             const firstItem = items[0];
-            const response = await registerDomain({
-                domainName: firstItem.name,
-                years: firstItem.year || 1
-            }).unwrap();
+            let response;
+
+            if (firstItem.type === 'ssl') {
+                response = await orderSsl({
+                    product: firstItem.productCode,
+                    domain: firstItem.domain,
+                    csr: firstItem.csr,
+                    approverEmail: firstItem.approverEmail,
+                    period: `${firstItem.year}Y`
+                }).unwrap();
+            } else {
+                response = await registerDomain({
+                    domainName: firstItem.name,
+                    years: firstItem.year || 1
+                }).unwrap();
+            }
 
             if (response.success) {
                 setOrderData(response);
                 setStep('payment');
-                addToast('success', 'Order Created', response.message);
+                addToast('success', 'Order Created', response.message || 'Order successfully created.');
             }
         } catch (err) {
-            console.error('Registration failed:', err);
-            addToast('error', 'Registration Failed', err?.data?.message || 'Could not create registration order');
+            console.error('Order creation failed:', err);
+            addToast('error', 'Order Failed', err?.data?.message || 'Could not create order');
         }
     };
 
@@ -209,12 +224,12 @@ const Checkout = () => {
 
                                         {step === 'review' && (
                                             <Button
-                                                onClick={handleRegister}
+                                                onClick={handleCreateOrder}
                                                 variant="primary"
                                                 className="w-full h-12 text-lg shadow-lg shadow-primary-500/20"
                                                 isLoading={isRegistering}
                                             >
-                                                Complete Registration
+                                                Complete Order
                                             </Button>
                                         )}
                                     </CardBody>
