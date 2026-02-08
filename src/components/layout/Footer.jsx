@@ -5,35 +5,41 @@ const Footer = () => {
     const currentYear = new Date().getFullYear();
 
     const footerLinks = {
-        product: [
-            { name: 'Domain Search', href: '/search' },
-            { name: 'Wordpress Hosting', href: '#' },
-            { name: 'Web Hosting', href: '#' },
-            { name: 'Professional Email', href: '#' },
-        ],
         company: [
-            { name: 'About Us', href: '#' },
-            { name: 'Careers', href: '#' },
-            { name: 'Affiliates', href: '#' },
-            { name: 'Blog', href: '#' },
-        ],
-        support: [
-            { name: 'Help Center', href: '#' },
-            { name: 'Knowledge Base', href: '#' },
-            { name: 'Contact Us', href: '#' },
-            { name: 'System Status', href: '#' },
+            { name: 'About Us', href: '/about-us' },
+            { name: 'Careers', href: '/career-policy' },
+            { name: 'Imprint', href: '/imprint' },
+            { name: 'Product Feedback', href: '/product-feedback' },
         ],
         legal: [
-            { name: 'Privacy Policy', href: '#' },
-            { name: 'Terms of Service', href: '#' },
-            { name: 'Cookie Policy', href: '#' },
+            { name: 'Terms of Use', href: '/terms-of-use' },
+            { name: 'Privacy Policy', href: '/privacy-policy' },
+            { name: 'Cookie Policy', href: '/cookie-policy' },
+            { name: 'Accessibility', href: '/accessibility' },
+            { name: 'General Risk Warning', href: '/general-risk-warning' },
+        ],
+        policies: [
+            { name: 'Sustainability Policy', href: '/sustainability-policy' },
+            { name: 'Supply Chain Policy', href: '/supply-chain-policy' },
+            { name: 'Modern Slavery Act', href: '/modern-slavery-act' },
+            { name: 'Digital Services Act', href: '/digital-services-act' },
+            { name: 'Extended Policy', href: '/extended-policy' },
+            { name: 'Prohibited Use Policy', href: '/prohibited-use-policy' },
+        ],
+        community: [
+            { name: 'Community Rules', href: '/community-rules' },
+            { name: 'Business Ethics', href: '/business-ethics' },
+            { name: 'AI Ethics', href: '/ai-ethics' },
+            { name: 'Human Rights Policy', href: '/human-rights-policy' },
+            { name: 'Compliance Framework', href: '/compliance-framework' },
+            { name: 'Vulnerable Customers', href: '/vulnerable-customers' },
         ],
     };
 
     return (
         <footer className="bg-neutral-900 text-neutral-300 pt-12 pb-8 md:pt-20 md:pb-10">
             <div className="container-padding max-w-7xl mx-auto">
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-8 md:gap-12 mb-12 md:mb-16">
+                <div className="grid grid-cols-2 lg:grid-cols-6 gap-8 md:gap-12 mb-12 md:mb-16">
                     {/* Brand Column */}
                     <div className="lg:col-span-2 space-y-6">
                         <Link to="/" className="flex items-center gap-2 group">
@@ -62,20 +68,7 @@ const Footer = () => {
                         </div>
                     </div>
 
-                    {/* Links Columns */}
-                    <div>
-                        <h3 className="font-bold text-white mb-6">Product</h3>
-                        <ul className="space-y-3">
-                            {footerLinks.product.map((link) => (
-                                <li key={link.name}>
-                                    <Link to={link.href} className="text-sm hover:text-primary-400 transition-colors">
-                                        {link.name}
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
-
+                    {/* Company Column */}
                     <div>
                         <h3 className="font-bold text-white mb-6">Company</h3>
                         <ul className="space-y-3">
@@ -89,10 +82,39 @@ const Footer = () => {
                         </ul>
                     </div>
 
+                    {/* Legal Column */}
                     <div>
-                        <h3 className="font-bold text-white mb-6">Support</h3>
+                        <h3 className="font-bold text-white mb-6">Legal</h3>
                         <ul className="space-y-3">
-                            {footerLinks.support.map((link) => (
+                            {footerLinks.legal.map((link) => (
+                                <li key={link.name}>
+                                    <Link to={link.href} className="text-sm hover:text-primary-400 transition-colors">
+                                        {link.name}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* Policies Column */}
+                    <div>
+                        <h3 className="font-bold text-white mb-6">Policies</h3>
+                        <ul className="space-y-3">
+                            {footerLinks.policies.map((link) => (
+                                <li key={link.name}>
+                                    <Link to={link.href} className="text-sm hover:text-primary-400 transition-colors">
+                                        {link.name}
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* Community Column */}
+                    <div>
+                        <h3 className="font-bold text-white mb-6">Community</h3>
+                        <ul className="space-y-3">
+                            {footerLinks.community.map((link) => (
                                 <li key={link.name}>
                                     <Link to={link.href} className="text-sm hover:text-primary-400 transition-colors">
                                         {link.name}
@@ -104,13 +126,8 @@ const Footer = () => {
                 </div>
 
                 {/* Bottom Bar */}
-                <div className="pt-8 border-t border-neutral-800 flex flex-col md:flex-row justify-between items-center gap-6 md:gap-4 text-sm text-white">
-                    <p className="text-center md:text-left">&copy; {currentYear} SNC-Domain. All rights reserved.</p>
-                    <div className="flex flex-wrap justify-center gap-4 md:gap-6">
-                        <Link to="#" className="hover:text-primary-400 transition-colors">Privacy Policy</Link>
-                        <Link to="#" className="hover:text-primary-400 transition-colors">Terms of Service</Link>
-                        <Link to="#" className="hover:text-primary-400 transition-colors">Cookie Preferences</Link>
-                    </div>
+                <div className="pt-8 border-t border-neutral-800 text-center md:text-left text-sm text-white">
+                    <p>&copy; {currentYear} SNC-Domain. All rights reserved.</p>
                 </div>
             </div>
         </footer>

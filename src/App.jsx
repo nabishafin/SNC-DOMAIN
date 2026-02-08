@@ -7,6 +7,7 @@ import AppRoutes from './routes/AppRoutes';
 import { ToastProvider } from './context/ToastContext';
 import CartDrawer from './pages/checkout/CartDrawer';
 import GlobalScroll from './components/layout/GlobalScroll';
+import CookieConsentModal from './components/common/CookieConsentModal';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <GlobalScroll />
           <AppRoutes />
           <CartDrawer />
+          <CookieConsentModal />
           <ToastContainer
             position="top-right"
             autoClose={3000}
