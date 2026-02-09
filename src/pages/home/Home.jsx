@@ -333,53 +333,6 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* Testimonials - New */}
-            <section className="py-6 bg-[#0a0a0a] text-white relative overflow-hidden">
-                <div className="absolute inset-0 opacity-10 bg-[url('https://grainy-gradients.vercel.app/noise.svg')]"></div>
-                <div className="container-padding max-w-7xl mx-auto relative z-10">
-                    <div className="text-center mb-6">
-                        <div className="flex justify-center gap-1 mb-3">
-                            {[1, 2, 3, 4, 5].map(i => <Star key={i} className="w-5 h-5 text-amber-400 fill-amber-400" />)}
-                        </div>
-                        <h2 className="text-4xl font-black tracking-tight">Rated 4.9/5 by 50,000+ Founders</h2>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {[
-                            { name: 'Sarah Jenkins', role: 'CEO at PixelFlow', content: 'SNC-Domain is a game changer. The interface is light years ahead of any other registrar I have used.', avatar: 'SJ', image: 'https://randomuser.me/api/portraits/women/44.jpg' },
-                            { name: 'Marcus Chen', role: 'Dev@FutureTech', content: 'DNS propagation in seconds. Not minutes. Seconds. The API is clean and easy to integrate.', avatar: 'MC', image: 'https://randomuser.me/api/portraits/men/32.jpg' },
-                            { name: 'Elena Rodriguez', role: 'Founder, EcoScale', content: 'Security is my top priority. Their enterprise shield gives me peace of mind for our 500+ domains.', avatar: 'ER', image: 'https://randomuser.me/api/portraits/women/68.jpg' }
-                        ].map((t, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                whileInView={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: i * 0.1 }}
-                                className="bg-white/5 backdrop-blur-xl p-6 rounded-2xl border border-white/10 relative group"
-                            >
-                                <Quote className="absolute top-4 right-4 w-7 h-7 text-white/10 group-hover:text-primary-400 transition-colors" />
-                                <p className="text-base text-neutral-300 mb-6 italic">&quot;{t.content}&quot;</p>
-                                <div className="flex items-center gap-4">
-                                    <img
-                                        src={t.image}
-                                        alt={t.name}
-                                        className="w-12 h-12 rounded-full object-cover border-2 border-primary-600/50"
-                                        onError={(e) => {
-                                            e.currentTarget.style.display = 'none';
-                                            const fallback = e.currentTarget.nextElementSibling;
-                                            if (fallback) fallback.style.display = 'flex';
-                                        }}
-                                    />
-                                    <div className="w-12 h-12 rounded-full bg-primary-600 hidden items-center justify-center font-black text-sm">{t.avatar}</div>
-                                    <div>
-                                        <div className="text-base font-bold">{t.name}</div>
-                                        <div className="text-xs text-neutral-500 uppercase tracking-widest">{t.role}</div>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
 
             {/* FAQ Section - Two Column Layout */}
             <section className="py-6 bg-white border-b border-neutral-100">
