@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PublicLayout from '../../components/layout/PublicLayout';
 import PricingCard from '../../components/domain/PricingCard';
 import { tldData } from '../../mock/tlds';
@@ -18,9 +19,10 @@ const Pricing = () => {
             ? tldData
             : tldData.filter((tld) => tld.category === selectedCategory);
 
+    const navigate = useNavigate();
+
     const handleSelectTld = (tld) => {
-        console.log('Selected TLD:', tld);
-        // Mock TLD selection - navigate to domain search
+        navigate(`/search?tld=${tld.extension}`);
     };
 
     return (
