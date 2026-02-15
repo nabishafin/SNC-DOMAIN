@@ -42,6 +42,8 @@ import SSL from '../pages/dashboard/SSL';
 import Contacts from '../pages/dashboard/Contacts';
 import Billing from '../pages/dashboard/Billing';
 import DynDNS from '../pages/dashboard/DynDNS';
+import Hosting from '../pages/dashboard/Hosting';
+import GlueRecords from '../pages/dashboard/GlueRecords';
 
 const AppRoutes = () => {
     return (
@@ -86,6 +88,8 @@ const AppRoutes = () => {
             <Route path="/dashboard/contacts" element={<Contacts />} />
             <Route path="/dashboard/billing" element={<Billing />} />
             <Route path="/dashboard/dyndns" element={<DynDNS />} />
+            <Route path="/dashboard/hosting" element={<Hosting />} />
+            <Route path="/dashboard/glue-records" element={<GlueRecords />} />
 
             {/* Checkout Routes */}
             <Route path="/checkout" element={<Checkout />} />
