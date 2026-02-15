@@ -8,9 +8,10 @@ const DomainResultItem = ({ result, onAddToCart }) => {
             <div className="flex-1 min-w-0 w-full">
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
                     <h3 className="text-lg font-semibold text-neutral-900 break-all">
+                        {/* Only append TLD if it's not already part of the domain string */}
                         {result.domain}
-                        {result.tld && result.tld !== 'undefined' && (
-                            <span className="text-primary-600">{result.tld}</span>
+                        {result.tld && result.tld !== 'undefined' && !result.domain.endsWith(`.${result.tld}`) && !result.domain.endsWith(result.tld) && (
+                            <span className="text-primary-600">.{result.tld.replace(/^\./, '')}</span>
                         )}
                     </h3>
                     <div className="flex items-center gap-2">
@@ -42,10 +43,16 @@ const DomainResultItem = ({ result, onAddToCart }) => {
             {result.available && (
                 <div className="flex flex-row items-center justify-between sm:justify-end gap-4 w-full sm:w-auto sm:ml-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-neutral-100">
                     <div className="text-left sm:text-right">
-                        <p className="text-2xl font-bold text-neutral-900">
-                            ${result.price.toFixed(2)}
-                        </p>
-                        <p className="text-xs text-neutral-500">per year</p>
+                        {result.price ? (
+                            <p className="text-2xl font-bold text-neutral-900">
+                                ${typeof result.price === 'number' ? result.price.toFixed(2) : result.price}
+                            </p>
+                        ) : (
+                            <p className="text-lg font-semibold text-neutral-400">
+                                Price Unavailable
+                            </p>
+                        )}
+                        {result.price && <p className="text-xs text-neutral-500">per year</p>}
                     </div>
                     <Button
                         variant="primary"

@@ -9,8 +9,8 @@ export const domainApi = baseApi.injectEndpoints({
                 params: { domain },
             }),
             transformResponse: (response) => {
-                // The API might return the data wrapped in a "data" property
-                return response?.data || response;
+                // Return the full response structure: { success, data, suggestions }
+                return response;
             },
             providesTags: ["domains"],
         }),

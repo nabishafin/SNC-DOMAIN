@@ -37,7 +37,20 @@ const DomainSearch = () => {
     // Update results when API data changes
     useEffect(() => {
         if (apiResults) {
-            setResults(Array.isArray(apiResults) ? apiResults : [apiResults]);
+            // New API format: { success: true, data: { ... }, suggestions: [ ... ] }
+            const exactMatch = apiResults.data;
+            const suggestions = apiResults.suggestions || [];
+
+            // Combine exact match (if available/valid) with suggestions
+            const combinedResults = [];
+            if (exactMatch && exactMatch.domain) {
+                combinedResults.push(exactMatch);
+            }
+            if (Array.isArray(suggestions)) {
+                combinedResults.push(...suggestions);
+            }
+
+            setResults(combinedResults);
         }
     }, [apiResults]);
 

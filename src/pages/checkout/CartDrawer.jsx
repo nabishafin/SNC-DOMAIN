@@ -72,7 +72,17 @@ const CartDrawer = () => {
                                             <h3 className="font-bold text-neutral-900">{item.name}</h3>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <span className="text-xs font-semibold text-primary-600 bg-primary-50 px-2 py-0.5 rounded capitalize">{item.type}</span>
-                                                <span className="text-xs text-neutral-500">{item.year} Year</span>
+                                                <select
+                                                    value={item.year}
+                                                    onChange={(e) => dispatch(updateItemYear({ id: item.id, year: parseInt(e.target.value) }))}
+                                                    className="text-xs border border-neutral-200 rounded px-1.5 py-0.5 bg-white text-neutral-600 focus:outline-none focus:border-primary-500"
+                                                >
+                                                    {[...Array(10)].map((_, i) => (
+                                                        <option key={i + 1} value={i + 1}>
+                                                            {i + 1} Year{(i + 1) > 1 ? 's' : ''}
+                                                        </option>
+                                                    ))}
+                                                </select>
                                             </div>
                                         </div>
                                         <button
@@ -87,7 +97,7 @@ const CartDrawer = () => {
                                             <Shield className="w-3.5 h-3.5 text-success-500" />
                                             Privacy Protection Included
                                         </div>
-                                        <span className="font-bold text-lg text-neutral-900">${item.price.toFixed(2)}</span>
+                                        <span className="font-bold text-lg text-neutral-900">${(item.price * item.year).toFixed(2)}</span>
                                     </div>
                                 </div>
                             ))

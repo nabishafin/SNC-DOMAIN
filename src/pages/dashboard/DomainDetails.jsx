@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, Globe, Calendar, Shield, Server, RefreshCw, Save, Plus, Trash2, Loader2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Globe, Calendar, Shield, Server, RefreshCw, Save, Plus, Trash2, Loader2, AlertTriangle, Lock } from 'lucide-react';
 import { toast } from 'react-toastify';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import Card, { CardBody, CardHeader } from '../../components/ui/Card';
@@ -10,6 +10,8 @@ import Input from '../../components/ui/Input';
 import { useGetDomainDetailsQuery, useToggleAutoRenewMutation, useUpdateNameserversMutation, useToggleWhoisPrivacyMutation } from '../../redux/features/domain/domainApi';
 import { useGetDnsRecordsQuery, useAddDnsRecordMutation, useDeleteDnsRecordMutation } from '../../redux/features/dns/dnsApi';
 import { cn } from '../../lib/utils';
+import DNSSECManagement from '../../components/dashboard/domain/tabs/DNSSECManagement';
+import NameserverManagement from '../../components/dashboard/domain/tabs/NameserverManagement';
 
 const DomainDetails = () => {
     const { id: domainName } = useParams();
@@ -39,11 +41,31 @@ const DomainDetails = () => {
 
     useEffect(() => {
         if (domainData?.db) {
-            setNameservers(domainData.db.nameservers || []);
             setAutoRenew(domainData.db.autoRenew);
             setWhoisPrivacy(domainData.db.whoisPrivacy || false);
         }
     }, [domainData]);
+
+    // Extract actual nameservers: prioritize inwx.ns (registrar source), then DNS NS records, then db fallback
+    useEffect(() => {
+        // 1. Best source: inwx.ns from the registrar API
+        if (domainData?.inwx?.ns?.length > 0) {
+            setNameservers(domainData.inwx.ns);
+        }
+        // 2. Fallback: NS records from DNS zone
+        else if (dnsData?.record) {
+            const nsRecords = dnsData.record
+                .filter(r => r.type === 'NS')
+                .map(r => r.content);
+            if (nsRecords.length > 0) {
+                setNameservers(nsRecords);
+            }
+        }
+        // 3. Last resort: db stored nameservers
+        else if (domainData?.db?.nameservers?.length > 0) {
+            setNameservers(domainData.db.nameservers);
+        }
+    }, [dnsData, domainData]);
 
     const handleToggleAutoRenew = async () => {
         try {
@@ -196,6 +218,7 @@ const DomainDetails = () => {
         { id: 'general', label: 'Overview', icon: Globe },
         { id: 'dns', label: 'DNS Records', icon: Shield },
         { id: 'nameservers', label: 'Nameservers', icon: Server },
+        { id: 'dnssec', label: 'DNSSEC', icon: Lock },
     ];
 
     return (
@@ -273,6 +296,7 @@ const DomainDetails = () => {
             {activeTab === 'general' && (
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <div className="lg:col-span-2 space-y-6">
+                        {/* Domain Information Card */}
                         <Card className="border-none shadow-soft-md">
                             <CardHeader className="border-b border-neutral-100 pb-4">
                                 <h2 className="text-lg font-bold text-neutral-900">Domain Information</h2>
@@ -283,23 +307,162 @@ const DomainDetails = () => {
                                     <p className="text-lg font-medium text-neutral-900 mt-1">{db.domainName}</p>
                                 </div>
                                 <div>
-                                    <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Registrar</span>
-                                    <p className="text-lg font-medium text-neutral-900 mt-1">SNC-Domain (via INWX)</p>
+                                    <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">TLD</span>
+                                    <p className="text-lg font-medium text-neutral-900 mt-1">.{db.tld || db.domainName?.split('.').pop()}</p>
                                 </div>
                                 <div>
                                     <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Registration Date</span>
-                                    <p className="text-neutral-900 mt-1">{new Date(db.registrationDate).toLocaleDateString()}</p>
+                                    <p className="text-neutral-900 mt-1">
+                                        {inwx?.crDate?.scalar
+                                            ? new Date(inwx.crDate.scalar).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                                            : new Date(db.registrationDate).toLocaleDateString()}
+                                    </p>
                                 </div>
                                 <div>
                                     <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Expiration Date</span>
-                                    <p className="text-neutral-900 mt-1">{new Date(db.expiryDate).toLocaleDateString()}</p>
+                                    <p className="text-neutral-900 mt-1">
+                                        {inwx?.exDate?.scalar
+                                            ? new Date(inwx.exDate.scalar).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                                            : new Date(db.expiryDate).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                <div>
+                                    <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Last Updated</span>
+                                    <p className="text-neutral-900 mt-1">
+                                        {inwx?.upDate?.scalar
+                                            ? new Date(inwx.upDate.scalar).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+                                            : new Date(db.updatedAt).toLocaleDateString()}
+                                    </p>
+                                </div>
+                                <div>
+                                    <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Registration Period</span>
+                                    <p className="text-neutral-900 mt-1">{inwx?.period || '1Y'}</p>
                                 </div>
                             </CardBody>
                         </Card>
 
+                        {/* Registrar & Status Card */}
                         <Card className="border-none shadow-soft-md">
                             <CardHeader className="border-b border-neutral-100 pb-4">
-                                <h2 className="text-lg font-bold text-neutral-900">Contact Information</h2>
+                                <h2 className="text-lg font-bold text-neutral-900">Registrar Details</h2>
+                            </CardHeader>
+                            <CardBody className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div>
+                                    <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Registrar</span>
+                                    <p className="text-neutral-900 mt-1 font-medium">SNC-Domain (via INWX)</p>
+                                </div>
+                                <div>
+                                    <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">INWX Domain ID</span>
+                                    <p className="text-neutral-900 mt-1 font-mono">{inwx?.roId || db.inwxId || '-'}</p>
+                                </div>
+                                <div>
+                                    <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">INWX Status</span>
+                                    <div className="mt-1 flex items-center gap-2">
+                                        <Badge variant={inwx?.status === 'OK' ? 'success' : 'warning'} className="text-xs">
+                                            {inwx?.status || db.status || 'Unknown'}
+                                        </Badge>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Renewal Mode</span>
+                                    <div className="mt-1 flex items-center gap-2">
+                                        <Badge variant={inwx?.renewalMode === 'AUTORENEW' ? 'success' : 'neutral'} className="text-xs">
+                                            {inwx?.renewalMode || (autoRenew ? 'AUTORENEW' : 'MANUAL')}
+                                        </Badge>
+                                    </div>
+                                </div>
+                                <div>
+                                    <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Transfer Mode</span>
+                                    <p className="text-neutral-900 mt-1">{inwx?.transferMode || 'DEFAULT'}</p>
+                                </div>
+                                <div>
+                                    <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Environment</span>
+                                    <div className="mt-1 flex items-center gap-2">
+                                        <Badge variant={db.environment === 'production' ? 'success' : 'warning'} className="text-xs uppercase">
+                                            {db.environment || 'production'}
+                                        </Badge>
+                                    </div>
+                                </div>
+                            </CardBody>
+                        </Card>
+
+                        {/* Nameservers Summary Card */}
+                        <Card className="border-none shadow-soft-md">
+                            <CardHeader className="border-b border-neutral-100 pb-4">
+                                <h2 className="text-lg font-bold text-neutral-900">Nameservers</h2>
+                            </CardHeader>
+                            <CardBody>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    {(inwx?.ns || db.nameservers || []).map((ns, i) => (
+                                        <div key={i} className="flex items-center gap-3 p-3 bg-neutral-50 rounded-xl border border-neutral-100">
+                                            <Server className="w-4 h-4 text-primary-500 shrink-0" />
+                                            <span className="text-sm font-mono text-neutral-700">{ns}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardBody>
+                        </Card>
+
+                        {/* Auth Code & Verification Card */}
+                        <Card className="border-none shadow-soft-md">
+                            <CardHeader className="border-b border-neutral-100 pb-4">
+                                <h2 className="text-lg font-bold text-neutral-900">Transfer & Verification</h2>
+                            </CardHeader>
+                            <CardBody className="space-y-6">
+                                {inwx?.authCode && (
+                                    <div>
+                                        <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Auth Code (EPP)</span>
+                                        <div className="mt-2 flex items-center gap-3">
+                                            <code className="flex-1 p-3 bg-neutral-50 rounded-xl border border-neutral-200 text-sm font-mono text-neutral-700 select-all">
+                                                {inwx.authCode}
+                                            </code>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(inwx.authCode);
+                                                    toast.success('Auth code copied to clipboard');
+                                                }}
+                                            >
+                                                Copy
+                                            </Button>
+                                        </div>
+                                        <p className="text-xs text-neutral-500 mt-1.5">Required to transfer this domain to another registrar.</p>
+                                    </div>
+                                )}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <div>
+                                        <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Verification Status</span>
+                                        <div className="mt-1 flex items-center gap-2">
+                                            <Badge variant={inwx?.verificationStatus === 'ACTIVE' ? 'success' : 'warning'} className="text-xs">
+                                                {inwx?.verificationStatus || '-'}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Registrant Verification</span>
+                                        <div className="mt-1 flex items-center gap-2">
+                                            <Badge variant={inwx?.registrantVerificationStatus === 'VERIFIED' ? 'success' : 'neutral'} className="text-xs">
+                                                {inwx?.registrantVerificationStatus || '-'}
+                                            </Badge>
+                                        </div>
+                                    </div>
+                                    {inwx?.reDate?.scalar && (
+                                        <div>
+                                            <span className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">Renewal Deadline</span>
+                                            <p className="text-neutral-900 mt-1">
+                                                {new Date(inwx.reDate.scalar).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            </CardBody>
+                        </Card>
+
+                        {/* Contact/WHOIS Privacy Card */}
+                        <Card className="border-none shadow-soft-md">
+                            <CardHeader className="border-b border-neutral-100 pb-4">
+                                <h2 className="text-lg font-bold text-neutral-900">WHOIS Privacy</h2>
                             </CardHeader>
                             <CardBody>
                                 <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-xl border border-neutral-100">
@@ -331,7 +494,9 @@ const DomainDetails = () => {
                         </Card>
                     </div>
 
+                    {/* Sidebar */}
                     <div className="space-y-6">
+                        {/* Auto-Renewal Card */}
                         <Card className="border-none shadow-soft-md bg-gradient-to-br from-primary-900 to-primary-800 text-white">
                             <CardBody>
                                 <div className="flex items-center justify-between mb-2">
@@ -354,9 +519,15 @@ const DomainDetails = () => {
                                         <div className="w-11 h-6 bg-primary-900/50 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-400 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-success-500"></div>
                                     </div>
                                 </label>
+                                {inwx?.renewalMode && (
+                                    <p className="text-xs text-primary-200 mt-3">
+                                        INWX Mode: {inwx.renewalMode}
+                                    </p>
+                                )}
                             </CardBody>
                         </Card>
 
+                        {/* Domain Lock Card */}
                         <Card className="border-none shadow-soft-md border-t-4 border-t-red-500">
                             <CardBody>
                                 <h3 className="font-bold text-neutral-900 mb-2">Domain Lock</h3>
@@ -370,6 +541,43 @@ const DomainDetails = () => {
                                     ) : (
                                         <span className="px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded">UNLOCKED</span>
                                     )}
+                                </div>
+                            </CardBody>
+                        </Card>
+
+                        {/* Quick Stats Card */}
+                        <Card className="border-none shadow-soft-md">
+                            <CardBody className="space-y-4">
+                                <h3 className="font-bold text-neutral-900">Quick Info</h3>
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-neutral-500">Domain ACE</span>
+                                        <span className="font-mono text-neutral-700">{inwx?.['domain-ace'] || db.domainName}</span>
+                                    </div>
+                                    <div className="border-t border-neutral-100" />
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-neutral-500">INWX ID</span>
+                                        <span className="font-mono text-neutral-700">{inwx?.roId || db.inwxId || '-'}</span>
+                                    </div>
+                                    <div className="border-t border-neutral-100" />
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-neutral-500">Transfer Mode</span>
+                                        <span className="text-neutral-700">{inwx?.transferMode || 'DEFAULT'}</span>
+                                    </div>
+                                    <div className="border-t border-neutral-100" />
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-neutral-500">Privacy</span>
+                                        <Badge variant={inwx?.withPrivacy ? 'success' : 'neutral'} className="text-xs">
+                                            {inwx?.withPrivacy ? 'Enabled' : inwx?.withPrivacy === null ? 'N/A' : 'Disabled'}
+                                        </Badge>
+                                    </div>
+                                    <div className="border-t border-neutral-100" />
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-neutral-500">Contact IDs</span>
+                                        <span className="font-mono text-neutral-700 text-xs">
+                                            {inwx?.registrant || '-'}
+                                        </span>
+                                    </div>
                                 </div>
                             </CardBody>
                         </Card>
@@ -534,73 +742,12 @@ const DomainDetails = () => {
 
             {/* Nameservers Tab */}
             {activeTab === 'nameservers' && (
-                <Card className="max-w-3xl border-none shadow-soft-md animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <CardHeader className="border-b border-neutral-100 pb-4">
-                        <h2 className="text-lg font-bold text-neutral-900">Nameservers</h2>
-                        <p className="text-sm text-neutral-500">Point your domain to your hosting provider.</p>
-                    </CardHeader>
-                    <CardBody>
-                        <div className="p-4 bg-primary-50 rounded-xl border border-primary-100 mb-6 flex gap-3">
-                            <div className="p-1.5 bg-white rounded-lg shadow-sm text-primary-600 h-fit">
-                                <Shield className="w-5 h-5" />
-                            </div>
-                            <div className="text-sm text-primary-900">
-                                <p className="font-semibold">{db.nameservers?.every(ns => ns.includes('inwx')) ? 'Using Default Nameservers' : 'Using Custom Nameservers'}</p>
-                                <p className="opacity-80 mt-0.5">We are {db.nameservers?.every(ns => ns.includes('inwx')) ? 'currently' : 'not'} managing your DNS automatically.</p>
-                            </div>
-                        </div>
+                <NameserverManagement domainName={domainName} />
+            )}
 
-                        <div className="space-y-4">
-                            {nameservers.map((ns, index) => (
-                                <div key={index} className="flex items-end gap-3 group">
-                                    <div className="flex-1">
-                                        <Input
-                                            label={index === 0 ? "Nameservers" : ""}
-                                            value={ns}
-                                            placeholder={`ns${index + 1}.snc-domain.com`}
-                                            onChange={(e) => {
-                                                const newNs = [...nameservers];
-                                                newNs[index] = e.target.value;
-                                                setNameservers(newNs);
-                                            }}
-                                        />
-                                    </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="md"
-                                        className="mb-1 text-neutral-400 hover:text-red-500 hover:bg-red-50"
-                                        onClick={() => handleRemoveNameserver(index)}
-                                        disabled={nameservers.length <= 1}
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            ))}
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full border-dashed border-2 text-neutral-500 hover:text-primary-600 hover:border-primary-200 mt-2"
-                                onClick={() => setNameservers([...nameservers, ''])}
-                                disabled={nameservers.length >= 4}
-                            >
-                                <Plus className="w-4 h-4 mr-2" />
-                                Add Another Nameserver
-                            </Button>
-                        </div>
-                        <div className="mt-8 pt-6 border-t border-neutral-100 flex justify-end">
-                            <Button
-                                variant="primary"
-                                size="lg"
-                                className="shadow-lg shadow-primary-500/20"
-                                onClick={handleUpdateNameservers}
-                                isLoading={isUpdatingNameservers}
-                            >
-                                <Save className="w-4 h-4 mr-2" />
-                                Save Changes
-                            </Button>
-                        </div>
-                    </CardBody>
-                </Card>
+            {/* DNSSEC Tab */}
+            {activeTab === 'dnssec' && (
+                <DNSSECManagement domainName={domainName} />
             )}
         </DashboardLayout>
     );

@@ -13,8 +13,16 @@ const cartSlice = createSlice({
             const item = action.payload;
             const exists = state.items.find((i) => i.id === item.id);
             if (!exists) {
-                state.items.push(item);
+                // Default year to 1 if not provided
+                state.items.push({ ...item, year: item.year || 1 });
                 state.isOpen = true;
+            }
+        },
+        updateItemYear: (state, action) => {
+            const { id, year } = action.payload;
+            const item = state.items.find((i) => i.id === id);
+            if (item) {
+                item.year = year;
             }
         },
         removeFromCart: (state, action) => {
@@ -32,7 +40,7 @@ const cartSlice = createSlice({
     },
 });
 
-export const { addToCart, removeFromCart, clearCart, toggleCart, setCartOpen } = cartSlice.actions;
+export const { addToCart, updateItemYear, removeFromCart, clearCart, toggleCart, setCartOpen } = cartSlice.actions;
 
 // Selector for total
 export const selectCartTotal = (state) =>
