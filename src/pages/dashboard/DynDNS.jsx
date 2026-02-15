@@ -15,7 +15,9 @@ import {
     AlertCircle,
     Globe,
     ExternalLink,
-    RefreshCw
+    RefreshCw,
+    Copy,
+    BookOpen
 } from 'lucide-react';
 import { useDispatch } from 'react-redux';
 import {
@@ -63,6 +65,7 @@ const DynDNS = () => {
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+    const [isSetupModalOpen, setIsSetupModalOpen] = useState(false);
     const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState(null);
     const [purchaseDomain, setPurchaseDomain] = useState('');
@@ -73,20 +76,24 @@ const DynDNS = () => {
 
     // Form states
     const [formData, setFormData] = useState({
+        username: '',
+        password: '',
         hostname: '',
-        type: 'A',
         content: '',
-        ttl: 300,
-        password: ''
+        ttl: 300
     });
 
     const handleCreateRecord = async (e) => {
         e.preventDefault();
         try {
-            await createDynDns(formData).unwrap();
-            addToast('success', 'Record Created', 'Dynamic DNS record created successfully.');
+            await createDynDns({
+                username: formData.username,
+                password: formData.password,
+                hostname: [formData.hostname] // API expects an array
+            }).unwrap();
+            addToast('success', 'Account Created', 'DynDNS account and record created successfully.');
             setIsCreateModalOpen(false);
-            setFormData({ hostname: '', type: 'A', content: '', ttl: 300, password: '' });
+            setFormData({ username: '', password: '', hostname: '', content: '', ttl: 300 });
         } catch (err) {
             addToast('error', 'Creation Failed', err?.data?.message || 'Failed to create record.');
         }
@@ -287,6 +294,12 @@ const DynDNS = () => {
                                                     <td className="px-6 py-4 text-neutral-500 font-mono text-xs">A: Dynamic</td>
                                                     <td className="px-6 py-4 text-right">
                                                         <div className="flex items-center justify-end gap-1">
+                                                            <Button variant="ghost" size="sm" onClick={() => {
+                                                                setSelectedRecord(record);
+                                                                setIsSetupModalOpen(true);
+                                                            }} title="Setup Guide">
+                                                                <BookOpen className="w-4 h-4 text-primary-500" />
+                                                            </Button>
                                                             <Button variant="ghost" size="sm" onClick={() => handleViewInfo(record.id)} title="Info">
                                                                 <Info className="w-4 h-4" />
                                                             </Button>
@@ -449,12 +462,34 @@ const DynDNS = () => {
             <Modal
                 isOpen={isCreateModalOpen}
                 onClose={() => setIsCreateModalOpen(false)}
-                title="Create DynDNS Record"
-                description="Purchase a hostname and configure dynamic updates."
+                title="Create DynDNS Account"
+                description="Configure a new DynDNS account and primary hostname."
             >
                 <form onSubmit={handleCreateRecord} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-neutral-700 mb-1">Hostname</label>
+                        <label className="block text-sm font-medium text-neutral-700 mb-1">Username</label>
+                        <input
+                            type="text"
+                            required
+                            placeholder="e.g. jdoe_home"
+                            className="w-full h-11 px-4 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all"
+                            value={formData.username}
+                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-1">Password</label>
+                        <input
+                            type="password"
+                            required
+                            placeholder="Minimum 8 characters"
+                            className="w-full h-11 px-4 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all"
+                            value={formData.password}
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-1">Primary Hostname</label>
                         <input
                             type="text"
                             required
@@ -464,40 +499,7 @@ const DynDNS = () => {
                             onChange={(e) => setFormData({ ...formData, hostname: e.target.value })}
                         />
                     </div>
-                    <div>
-                        <label className="block text-sm font-medium text-neutral-700 mb-1">IP Address (Content)</label>
-                        <input
-                            type="text"
-                            required
-                            placeholder="e.g. 1.2.3.4"
-                            className="w-full h-11 px-4 rounded-xl border border-neutral-200 focus:ring-2 focus:ring-primary-500/10 focus:border-primary-500 outline-none transition-all"
-                            value={formData.content}
-                            onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                        />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-neutral-700 mb-1">Record Type</label>
-                            <select
-                                className="w-full h-11 px-4 rounded-xl border border-neutral-200 outline-none bg-white"
-                                value={formData.type}
-                                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                            >
-                                <option value="A">A Record</option>
-                                <option value="AAAA">AAAA Record</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-neutral-700 mb-1">TTL (Seconds)</label>
-                            <input
-                                type="number"
-                                className="w-full h-11 px-4 rounded-xl border border-neutral-200 outline-none"
-                                value={formData.ttl}
-                                onChange={(e) => setFormData({ ...formData, ttl: parseInt(e.target.value) })}
-                            />
-                        </div>
-                    </div>
-                    <Button variant="primary" className="w-full h-11 mt-4" size="lg" isLoading={isCreating}>Create hostname</Button>
+                    <Button variant="primary" className="w-full h-11 mt-4" size="lg" isLoading={isCreating}>Create Account</Button>
                 </form>
             </Modal>
 
@@ -670,6 +672,86 @@ const DynDNS = () => {
                         >
                             Add to Cart
                         </Button>
+                    </div>
+                </div>
+            </Modal>
+            <Modal
+                isOpen={isSetupModalOpen}
+                onClose={() => setIsSetupModalOpen(false)}
+                title="DynDNS Setup Guide"
+                description={`How to configure ${selectedRecord?.hostname} on your devices.`}
+                size="lg"
+            >
+                <div className="space-y-6 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
+                            <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Update URL (NIC Protocol)</span>
+                            <div className="flex items-center justify-between mt-1">
+                                <code className="text-sm font-mono text-primary-600 truncate mr-2">https://api.scandic-domain.com/dyndns/nic/update</code>
+                                <Button variant="ghost" size="sm" onClick={() => {
+                                    navigator.clipboard.writeText("https://api.scandic-domain.com/dyndns/nic/update");
+                                    addToast('success', 'Copied', 'URL copied to clipboard');
+                                }}>
+                                    <Copy className="w-3 h-3" />
+                                </Button>
+                            </div>
+                        </div>
+                        <div className="p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
+                            <span className="text-xs font-bold text-neutral-400 uppercase tracking-wider">Username / Hostname</span>
+                            <div className="flex items-center justify-between mt-1">
+                                <code className="text-sm font-mono text-neutral-900 truncate mr-2">{selectedRecord?.hostname}</code>
+                                <Button variant="ghost" size="sm" onClick={() => {
+                                    navigator.clipboard.writeText(selectedRecord?.hostname);
+                                    addToast('success', 'Copied', 'Hostname copied to clipboard');
+                                }}>
+                                    <Copy className="w-3 h-3" />
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <h4 className="font-bold text-neutral-900 flex items-center gap-2">
+                            <Zap className="w-4 h-4 text-warning-500" />
+                            Configuration Examples
+                        </h4>
+
+                        <div className="bg-neutral-900 rounded-2xl p-5 overflow-hidden">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-xs font-bold text-neutral-500 uppercase">DDClient Config (Linux)</span>
+                                <Button variant="ghost" size="sm" className="text-neutral-400 hover:text-white" onClick={() => {
+                                    const config = `protocol=dyndns2\nuse=web, web=checkip.dyndns.com\nserver=api.scandic-domain.com\nscript=/dyndns/nic/update\nlogin=${selectedRecord?.hostname}\npassword=YOUR_PASSWORD\n${selectedRecord?.hostname}`;
+                                    navigator.clipboard.writeText(config);
+                                    addToast('success', 'Copied', 'Config snippet copied');
+                                }}>
+                                    <Copy className="w-3 h-3" />
+                                </Button>
+                            </div>
+                            <pre className="text-xs font-mono text-neutral-300 overflow-x-auto">
+                                {`protocol=dyndns2
+use=web, web=checkip.dyndns.com
+server=api.scandic-domain.com
+script=/dyndns/nic/update
+login=${selectedRecord?.hostname}
+password=YOUR_PASSWORD
+${selectedRecord?.hostname}`}
+                            </pre>
+                        </div>
+
+                        <div className="p-5 bg-primary-50 rounded-2xl border border-primary-100">
+                            <h5 className="font-bold text-primary-900 text-sm mb-2">Router Setup (TP-Link, ASUS, etc.)</h5>
+                            <ol className="text-sm text-primary-800 space-y-2 list-decimal list-inside">
+                                <li>Log in to your router's admin panel.</li>
+                                <li>Navigate to <b>Dynamic DNS</b> or <b>DDNS</b> settings.</li>
+                                <li>Select <b>Custom</b> or <b>DynDNS</b> as the service provider.</li>
+                                <li>Enter the Update URL, Hostname, and your DynDNS Password.</li>
+                                <li>Save/Apply settings to start automatic updates.</li>
+                            </ol>
+                        </div>
+                    </div>
+
+                    <div className="pt-2">
+                        <Button variant="primary" className="w-full h-11" onClick={() => setIsSetupModalOpen(false)}>Got it, thanks!</Button>
                     </div>
                 </div>
             </Modal>
