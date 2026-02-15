@@ -4,7 +4,6 @@ import Button from '../ui/Button';
 
 const TldFilter = ({ onFilterChange, className = '' }) => {
     const [selectedCategories, setSelectedCategories] = useState([]);
-    const [priceRange] = useState([0, 100]);
 
     const categories = [
         { id: 'generic', label: 'Generic TLDs (.com, .net, .org)' },
@@ -18,12 +17,12 @@ const TldFilter = ({ onFilterChange, className = '' }) => {
             : [...selectedCategories, categoryId];
 
         setSelectedCategories(newCategories);
-        onFilterChange?.({ categories: newCategories, priceRange });
+        onFilterChange?.({ categories: newCategories });
     };
 
     const handleClearFilters = () => {
         setSelectedCategories([]);
-        onFilterChange?.({ categories: [], priceRange: [0, 100] });
+        onFilterChange?.({ categories: [] });
     };
 
     return (
@@ -61,14 +60,6 @@ const TldFilter = ({ onFilterChange, className = '' }) => {
                                 </span>
                             </label>
                         ))}
-                    </div>
-                </div>
-
-                {/* Price Range Info */}
-                <div>
-                    <h4 className="text-sm font-medium text-neutral-700 mb-3">Price Range</h4>
-                    <div className="text-sm text-neutral-600">
-                        ${priceRange[0]} - ${priceRange[1]}+ per year
                     </div>
                 </div>
             </div>

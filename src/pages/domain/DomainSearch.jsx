@@ -20,7 +20,8 @@ const DomainSearch = () => {
     const dispatch = useDispatch();
     const { tldFilter, priceRange } = useSelector((state) => state.domain);
     const { addToast } = useToast();
-    const [results, setResults] = useState([]);
+    const [exactMatch, setExactMatch] = useState(null);
+    const [suggestions, setSuggestions] = useState([]);
 
     const [triggerSearch, { data: apiResults, isFetching, isError }] = useLazySearchDomainQuery();
 
@@ -38,29 +39,29 @@ const DomainSearch = () => {
     useEffect(() => {
         if (apiResults) {
             // New API format: { success: true, data: { ... }, suggestions: [ ... ] }
-            const exactMatch = apiResults.data;
-            const suggestions = apiResults.suggestions || [];
+            const match = apiResults.data;
+            const suggs = apiResults.suggestions || [];
 
-            // Combine exact match (if available/valid) with suggestions
-            const combinedResults = [];
-            if (exactMatch && exactMatch.domain) {
-                combinedResults.push(exactMatch);
-            }
-            if (Array.isArray(suggestions)) {
-                combinedResults.push(...suggestions);
-            }
-
-            setResults(combinedResults);
+            setExactMatch(match && match.domain ? match : null);
+            setSuggestions(Array.isArray(suggs) ? suggs : []);
         }
     }, [apiResults]);
 
     const handleFilterChange = (newFilters) => {
         if (newFilters.categories) dispatch(setTldFilter(newFilters.categories));
-        if (newFilters.priceRange) dispatch(setPriceRange(newFilters.priceRange));
     };
 
     const handleAddToCart = (result) => {
-        const fullName = result.tld ? `${result.domain}${result.tld}` : result.domain;
+        // More robust TLD handling: ensure exactly one TLD extension at the end
+        const rawDomain = result.domain.toLowerCase();
+        const tld = result.tld.replace(/^\./, '').toLowerCase();
+        const tldSuffix = `.${tld}`;
+
+        // If domain already ends with .tld, don't append it
+        const fullName = rawDomain.endsWith(tldSuffix)
+            ? rawDomain
+            : `${rawDomain}${tldSuffix}`;
+
         dispatch(addToCart({
             id: fullName,
             name: fullName,
@@ -91,18 +92,26 @@ const DomainSearch = () => {
         }
     }, [searchParams]);
 
-    // Apply filtering
-    const filteredResults = results.filter(result => {
-        if (priceRange) {
-            if (result.price < priceRange[0] || result.price > priceRange[1]) return false;
-        }
+    // Apply filtering to suggestions
+    const filteredSuggestions = suggestions.filter(result => {
+        if (tldFilter.length === 0 || tldFilter.includes('all')) return true;
 
-        if (tldFilter.length > 0) {
-            const matches = tldFilter.some(filter => result.tld.includes(filter) || filter === 'all');
-            if (!matches && tldFilter.length > 0 && !tldFilter.includes('all')) return false;
-        }
+        const resultTld = result.tld.replace(/^\./, '').toLowerCase();
 
-        return true;
+        return tldFilter.some(category => {
+            if (category === 'generic') {
+                return ['com', 'net', 'org', 'info', 'biz'].includes(resultTld);
+            }
+            if (category === 'country') {
+                // Country Code TLDs are almost always 2 characters (e.g., .de, .io, .co, .uk)
+                return resultTld.length === 2;
+            }
+            if (category === 'new') {
+                // New GTLDs are usually 3+ characters and not the traditional generics
+                return resultTld.length > 2 && !['com', 'net', 'org', 'info', 'biz'].includes(resultTld);
+            }
+            return false;
+        });
     });
 
     const popularTlds = tldData.filter(t => t.popular).slice(0, 6);
@@ -119,7 +128,7 @@ const DomainSearch = () => {
         { icon: TrendingUp, value: '99.99%', label: 'Uptime' },
     ];
 
-    const hasSearched = results.length > 0 || isFetching;
+    const hasSearched = exactMatch || suggestions.length > 0 || isFetching;
 
     return (
         <PublicLayout>
@@ -258,7 +267,7 @@ const DomainSearch = () => {
                                 <Loader2 className="w-12 h-12 text-primary-600 animate-spin mb-4" />
                                 <p className="text-lg font-medium text-neutral-600">Searching for your domain...</p>
                             </div>
-                        ) : filteredResults.length > 0 ? (
+                        ) : (exactMatch || filteredSuggestions.length > 0) ? (
                             <div className="flex flex-col lg:flex-row gap-8">
                                 {/* Sidebar Filter */}
                                 <div className="lg:w-72 flex-shrink-0">
@@ -286,20 +295,47 @@ const DomainSearch = () => {
                                 <main className="flex-1">
                                     <div className="mb-6 flex items-center justify-between">
                                         <p className="text-neutral-600">
-                                            Found <span className="font-bold text-neutral-900">{filteredResults.length}</span> results for{' '}
+                                            Found <span className="font-bold text-neutral-900">{filteredSuggestions.length + (exactMatch ? 1 : 0)}</span> results for{' '}
                                             <span className="font-bold text-primary-600">
                                                 {searchParams.get('q') || searchParams.get('domain') || 'your search'}
                                             </span>
                                         </p>
                                     </div>
-                                    <div className="space-y-4">
-                                        {filteredResults.map((result, index) => (
-                                            <DomainResultItem
-                                                key={`${result.domain}${result.tld}-${index}`}
-                                                result={result}
-                                                onAddToCart={handleAddToCart}
-                                            />
-                                        ))}
+                                    <div className="space-y-8">
+                                        {/* Primary Search Result */}
+                                        {exactMatch && (
+                                            <div className="space-y-4">
+                                                <h2 className="text-sm font-bold text-neutral-400 uppercase tracking-widest px-1">
+                                                    Search Result
+                                                </h2>
+                                                <DomainResultItem
+                                                    result={exactMatch}
+                                                    onAddToCart={handleAddToCart}
+                                                    featured={true}
+                                                />
+                                            </div>
+                                        )}
+
+                                        {/* Suggestions Section */}
+                                        {filteredSuggestions.length > 0 && (
+                                            <div className="space-y-4">
+                                                <div className="flex items-center gap-4 px-1">
+                                                    <h2 className="text-sm font-bold text-neutral-400 uppercase tracking-widest whitespace-nowrap">
+                                                        Other suggested TLDs
+                                                    </h2>
+                                                    <div className="h-[1px] w-full bg-neutral-200"></div>
+                                                </div>
+                                                <div className="space-y-3">
+                                                    {filteredSuggestions.map((result, index) => (
+                                                        <DomainResultItem
+                                                            key={`${result.domain}${result.tld}-${index}`}
+                                                            result={result}
+                                                            onAddToCart={handleAddToCart}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 </main>
                             </div>

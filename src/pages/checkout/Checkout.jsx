@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { CheckCircle, Lock } from 'lucide-react';
-import { clearCart, selectCartTotal } from '../../redux/slices/cartSlice';
+import { clearCart, updateItemYear, selectCartTotal } from '../../redux/slices/cartSlice';
 import { useToast } from '../../context/ToastContext';
 import { useRegisterDomainMutation } from '../../redux/features/domain/domainApi';
 import { useOrderSslMutation } from '../../redux/features/ssl/sslApi';
@@ -58,8 +58,15 @@ const Checkout = () => {
                     period: `${firstItem.year}Y`
                 }).unwrap();
             } else {
+                // Extremely robust sanitization to fix .biz.biz or .bizbiz duplicates
+                // 1. Handle .abc.abc case: result.com.com -> result.com
+                // 2. Handle .abcabc case: result.comcom -> result.com
+                const cleanDomainName = firstItem.name
+                    .replace(/\.([a-z0-9]+)\1$/i, '.$1') // fix .bizbiz
+                    .replace(/\.([a-z0-9]+)\.\1$/i, '.$1'); // fix .biz.biz
+
                 response = await registerDomain({
-                    domainName: firstItem.name,
+                    domainName: cleanDomainName,
                     years: firstItem.year || 1
                 }).unwrap();
             }
@@ -92,6 +99,8 @@ const Checkout = () => {
             addToast('error', 'Payment Failed', err?.data?.message || 'Could not initiate payment');
         }
     };
+
+    const displayTotal = step === 'payment' && orderData?.amount ? orderData.amount : total;
 
     if (!isAuthenticated || items.length === 0) return null;
 
@@ -127,27 +136,65 @@ const Checkout = () => {
 
                             {step === 'review' ? (
                                 <Card className="border-none shadow-soft-md">
-                                    <CardHeader className="border-b border-neutral-100 pb-4">
+                                    <CardHeader className="border-b border-neutral-100 pb-4 flex items-center justify-between">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded-full bg-primary-100 text-primary-600 flex items-center justify-center">
                                                 <span className="font-bold">2</span>
                                             </div>
                                             <h2 className="text-lg font-bold text-neutral-900">Review Items</h2>
                                         </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() => {
+                                                dispatch(clearCart());
+                                                navigate('/search');
+                                            }}
+                                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                        >
+                                            Clear Cart
+                                        </Button>
                                     </CardHeader>
                                     <CardBody>
                                         <div className="space-y-4">
-                                            {items.map((item) => (
-                                                <div key={item.id} className="p-4 border border-neutral-100 rounded-xl bg-neutral-50/50">
-                                                    <div className="flex justify-between items-start">
-                                                        <div>
-                                                            <h3 className="font-bold text-neutral-900">{item.name}</h3>
-                                                            <p className="text-sm text-neutral-500 capitalize">{item.type} • {item.year} Year</p>
+                                            {items.map((item) => {
+                                                // Safety sanitization for stale cart items (e.g., .bizbiz or .biz.biz)
+                                                // This ensures that even if user didn't clear cart, we fix the name here
+                                                const cleanName = item.name
+                                                    .replace(/\.([a-z0-9]+)\1$/i, '.$1') // fix .bizbiz
+                                                    .replace(/\.([a-z0-9]+)\.\1$/i, '.$1'); // fix .biz.biz
+
+                                                return (
+                                                    <div key={item.id} className="p-4 border border-neutral-100 rounded-xl bg-neutral-50/50">
+                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                            <div>
+                                                                <h3 className="font-bold text-neutral-900">{cleanName}</h3>
+                                                                <div className="flex items-center gap-2 mt-1">
+                                                                    <p className="text-sm text-neutral-500 capitalize">{item.type}</p>
+                                                                    <span className="text-neutral-300">•</span>
+                                                                    <select
+                                                                        value={item.year}
+                                                                        onChange={(e) => dispatch(updateItemYear({ id: item.id, year: parseInt(e.target.value) }))}
+                                                                        className="text-xs border border-neutral-200 rounded px-1.5 py-0.5 bg-white text-neutral-600 focus:outline-none focus:border-primary-500"
+                                                                    >
+                                                                        {[...Array(10)].map((_, i) => (
+                                                                            <option key={i + 1} value={i + 1}>
+                                                                                {i + 1} Year{(i + 1) > 1 ? 's' : ''}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <span className="font-bold text-neutral-900 block">${(item.price * item.year).toFixed(2)}</span>
+                                                                {item.year > 1 && (
+                                                                    <span className="text-xs text-neutral-400 font-medium">${item.price.toFixed(2)} / yr</span>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                        <span className="font-bold text-neutral-900">${item.price.toFixed(2)}</span>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                             <div className="bg-primary-50 p-4 rounded-xl flex items-center gap-3 text-sm text-primary-900">
                                                 <Lock className="w-4 h-4 text-primary-600" />
                                                 <span>Your registration details will be based on your account profile.</span>
@@ -207,7 +254,7 @@ const Checkout = () => {
                                         <div className="space-y-3">
                                             <div className="flex justify-between text-sm text-neutral-600">
                                                 <span>Subtotal</span>
-                                                <span>${total.toFixed(2)}</span>
+                                                <span>${displayTotal.toFixed(2)}</span>
                                             </div>
                                             <div className="flex justify-between text-sm text-neutral-600">
                                                 <span>Taxes (Estimated)</span>
@@ -219,7 +266,7 @@ const Checkout = () => {
 
                                         <div className="flex justify-between items-end mb-6">
                                             <span className="font-bold text-neutral-900">Total Due</span>
-                                            <span className="text-2xl font-bold text-primary-600">${total.toFixed(2)}</span>
+                                            <span className="text-2xl font-bold text-primary-600">${displayTotal.toFixed(2)}</span>
                                         </div>
 
                                         {step === 'review' && (

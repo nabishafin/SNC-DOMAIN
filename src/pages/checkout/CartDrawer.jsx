@@ -1,6 +1,6 @@
 import { X, Trash2, Shield, CreditCard } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
-import { toggleCart, removeFromCart, selectCartTotal } from '../../redux/slices/cartSlice';
+import { toggleCart, removeFromCart, updateItemYear, selectCartTotal } from '../../redux/slices/cartSlice';
 import Button from '../../components/ui/Button';
 import { cn } from '../../lib/utils';
 import { useNavigate } from 'react-router-dom';
