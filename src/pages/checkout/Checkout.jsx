@@ -5,7 +5,9 @@ import { CheckCircle, Lock } from 'lucide-react';
 import { clearCart, updateItemYear, selectCartTotal } from '../../redux/slices/cartSlice';
 import { useToast } from '../../context/ToastContext';
 import { useRegisterDomainMutation } from '../../redux/features/domain/domainApi';
-import { useOrderSslMutation } from '../../redux/features/ssl/sslApi';
+import {
+    usePurchaseSslMutation,
+} from '../../redux/features/ssl/sslApi';
 import { useInitiatePaymentMutation } from '../../redux/features/payment/paymentApi';
 import { usePurchaseDynDnsMutation } from '../../redux/features/dyndns/dyndnsApi';
 import Button from '../../components/ui/Button';
@@ -23,11 +25,11 @@ const Checkout = () => {
 
     // Mutations
     const [registerDomain, { isLoading: isRegisteringDomain }] = useRegisterDomainMutation();
-    const [orderSsl, { isLoading: isOrderingSsl }] = useOrderSslMutation();
+    const [purchaseSsl, { isLoading: isPurchasingSsl }] = usePurchaseSslMutation();
     const [initiatePayment, { isLoading: isInitiatingPayment }] = useInitiatePaymentMutation();
     const [purchaseDynDns, { isLoading: isPurchasingDynDns }] = usePurchaseDynDnsMutation();
 
-    const isRegistering = isRegisteringDomain || isOrderingSsl || isPurchasingDynDns;
+    const isRegistering = isRegisteringDomain || isPurchasingSsl || isInitiatingPayment || isPurchasingDynDns;
 
     const [step, setStep] = useState('review'); // review -> payment
     const [orderData, setOrderData] = useState(null);
@@ -47,32 +49,29 @@ const Checkout = () => {
         if (items.length === 0) return;
 
         try {
-            // For now, we handle transactions item-by-item to match the backend expectations
             const firstItem = items[0];
             let response;
 
             if (firstItem.type === 'ssl') {
-                response = await orderSsl({
-                    product: firstItem.productCode,
-                    domain: firstItem.domain,
+                // Supports both Mode A (Quick Buy) and Mode B (Full Setup)
+                response = await purchaseSsl({
+                    productId: firstItem.productCode,
+                    commonName: firstItem.domain,
                     csr: firstItem.csr,
-                    approverEmail: firstItem.approverEmail,
-                    period: `${firstItem.year}Y`
+                    validationEmail: firstItem.approverEmail,
+                    period: firstItem.year || 1
                 }).unwrap();
             } else if (firstItem.type === 'dyndns') {
                 response = await purchaseDynDns({
                     productId: firstItem.productCode,
                     domain: firstItem.domain,
                     years: firstItem.year || 1,
-                    autoFulfill: true // Enable direct testing as requested
+                    autoFulfill: true
                 }).unwrap();
             } else {
-                // Extremely robust sanitization to fix .biz.biz or .bizbiz duplicates
-                // 1. Handle .abc.abc case: result.com.com -> result.com
-                // 2. Handle .abcabc case: result.comcom -> result.com
                 const cleanDomainName = firstItem.name
-                    .replace(/\.([a-z0-9]+)\1$/i, '.$1') // fix .bizbiz
-                    .replace(/\.([a-z0-9]+)\.\1$/i, '.$1'); // fix .biz.biz
+                    .replace(/\.([a-z0-9]+)\1$/i, '.$1')
+                    .replace(/\.([a-z0-9]+)\.\1$/i, '.$1');
 
                 response = await registerDomain({
                     domainName: cleanDomainName,
