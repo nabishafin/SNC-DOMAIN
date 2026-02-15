@@ -7,6 +7,7 @@ import { useToast } from '../../context/ToastContext';
 import { useRegisterDomainMutation } from '../../redux/features/domain/domainApi';
 import { useOrderSslMutation } from '../../redux/features/ssl/sslApi';
 import { useInitiatePaymentMutation } from '../../redux/features/payment/paymentApi';
+import { usePurchaseDynDnsMutation } from '../../redux/features/dyndns/dyndnsApi';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Card, { CardBody, CardHeader } from '../../components/ui/Card';
@@ -24,8 +25,9 @@ const Checkout = () => {
     const [registerDomain, { isLoading: isRegisteringDomain }] = useRegisterDomainMutation();
     const [orderSsl, { isLoading: isOrderingSsl }] = useOrderSslMutation();
     const [initiatePayment, { isLoading: isInitiatingPayment }] = useInitiatePaymentMutation();
+    const [purchaseDynDns, { isLoading: isPurchasingDynDns }] = usePurchaseDynDnsMutation();
 
-    const isRegistering = isRegisteringDomain || isOrderingSsl;
+    const isRegistering = isRegisteringDomain || isOrderingSsl || isPurchasingDynDns;
 
     const [step, setStep] = useState('review'); // review -> payment
     const [orderData, setOrderData] = useState(null);
@@ -57,6 +59,13 @@ const Checkout = () => {
                     approverEmail: firstItem.approverEmail,
                     period: `${firstItem.year}Y`
                 }).unwrap();
+            } else if (firstItem.type === 'dyndns') {
+                response = await purchaseDynDns({
+                    productId: firstItem.productCode,
+                    domain: firstItem.domain,
+                    years: firstItem.year || 1,
+                    autoFulfill: true // Enable direct testing as requested
+                }).unwrap();
             } else {
                 // Extremely robust sanitization to fix .biz.biz or .bizbiz duplicates
                 // 1. Handle .abc.abc case: result.com.com -> result.com
@@ -83,11 +92,12 @@ const Checkout = () => {
     };
 
     const handleInitiatePayment = async () => {
-        if (!orderData?.orderId) return;
+        const orderId = orderData?.orderId || orderData?.data?.orderId;
+        if (!orderId) return;
 
         try {
             const response = await initiatePayment({
-                orderId: orderData.orderId
+                orderId
             }).unwrap();
 
             if (response.success && response.checkoutUrl) {
@@ -100,7 +110,7 @@ const Checkout = () => {
         }
     };
 
-    const displayTotal = step === 'payment' && orderData?.amount ? orderData.amount : total;
+    const displayTotal = step === 'payment' && (orderData?.amount || orderData?.data?.amount) ? (orderData.amount || orderData.data.amount) : total;
 
     if (!isAuthenticated || items.length === 0) return null;
 
@@ -214,16 +224,22 @@ const Checkout = () => {
                                     </CardHeader>
                                     <CardBody className="space-y-6">
                                         <div className="text-center py-4">
-                                            <p className="text-neutral-500 mb-2">Order ID: <span className="font-mono text-neutral-900 font-bold">{orderData?.orderId}</span></p>
-                                            <div className="text-4xl font-black text-neutral-900">${orderData?.amount?.toFixed(2)}</div>
+                                            <p className="text-neutral-500 mb-2">Order ID: <span className="font-mono text-neutral-900 font-bold">{orderData?.orderId || orderData?.data?.orderId}</span></p>
+                                            <div className="text-4xl font-black text-neutral-900">${(orderData?.amount || orderData?.data?.amount)?.toFixed(2)}</div>
                                             <p className="text-sm text-neutral-500">Total amount to be paid</p>
                                         </div>
 
                                         <div className="p-4 bg-neutral-50 rounded-xl space-y-3">
                                             <div className="flex justify-between text-sm">
-                                                <span className="text-neutral-500">Domain</span>
+                                                <span className="text-neutral-500">{items[0]?.type === 'dyndns' ? 'Product' : 'Domain'}</span>
                                                 <span className="font-bold text-neutral-900">{items[0]?.name}</span>
                                             </div>
+                                            {items[0]?.type === 'dyndns' && items[0]?.domain && (
+                                                <div className="flex justify-between text-sm">
+                                                    <span className="text-neutral-500">Domain</span>
+                                                    <span className="font-bold text-neutral-900">{items[0].domain}</span>
+                                                </div>
+                                            )}
                                             <div className="flex justify-between text-sm">
                                                 <span className="text-neutral-500">Registration Period</span>
                                                 <span className="font-bold text-neutral-900">{items[0]?.year} Year</span>

@@ -16,7 +16,8 @@ import {
     Lock,
     Users,
     CreditCard,
-    Home
+    Home,
+    Zap
 } from 'lucide-react';
 import Button from '../ui/Button';
 import { cn } from '../../lib/utils';
@@ -47,6 +48,7 @@ const DashboardLayout = ({ children }) => {
         { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
         { name: 'My Domains', href: '/dashboard/domains', icon: Globe },
         { name: 'SSL Certificates', href: '/dashboard/ssl', icon: Lock },
+        { name: 'DynDNS', href: '/dashboard/dyndns', icon: Zap },
         { name: 'Contacts', href: '/dashboard/contacts', icon: Users },
         { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
         { name: 'Settings', href: '/dashboard/settings', icon: Settings },

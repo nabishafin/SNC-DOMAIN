@@ -41,6 +41,7 @@ import Settings from '../pages/dashboard/Settings';
 import SSL from '../pages/dashboard/SSL';
 import Contacts from '../pages/dashboard/Contacts';
 import Billing from '../pages/dashboard/Billing';
+import DynDNS from '../pages/dashboard/DynDNS';
 
 const AppRoutes = () => {
     return (
@@ -84,6 +85,7 @@ const AppRoutes = () => {
             <Route path="/dashboard/ssl" element={<SSL />} />
             <Route path="/dashboard/contacts" element={<Contacts />} />
             <Route path="/dashboard/billing" element={<Billing />} />
+            <Route path="/dashboard/dyndns" element={<DynDNS />} />
 
             {/* Checkout Routes */}
             <Route path="/checkout" element={<Checkout />} />
