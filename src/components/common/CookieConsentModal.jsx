@@ -107,6 +107,18 @@ const CookieConsentModal = () => {
         }
     }, []);
 
+    // Prevent body scrolling when modal is open
+    useEffect(() => {
+        if (isVisible) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [isVisible]);
+
     const setCookie = (name, value, days) => {
         let expires = "";
         if (days) {
@@ -132,13 +144,13 @@ const CookieConsentModal = () => {
     if (!isVisible) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 overflow-y-auto" data-lenis-prevent>
             <div className="bg-white rounded-lg shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col">
-                <div className="p-6 border-b border-neutral-200">
+                <div className="p-6 border-b border-neutral-200 shrink-0">
                     <h2 className="text-2xl font-bold text-neutral-900">Cookie Settings / Cookie-Einstellungen</h2>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-6">
+                <div className="flex-1 overflow-y-auto p-6" data-lenis-prevent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {cookieContent.map((item, index) => (
                             <div key={index} className="space-y-2 border-b border-neutral-100 pb-4 last:border-0" dir={item.dir || 'ltr'}>
