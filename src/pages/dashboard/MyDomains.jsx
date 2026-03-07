@@ -172,26 +172,26 @@ const MyDomains = () => {
                                 </div>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <Link to={`/dashboard/domains/${domain.domainName}`} className="flex-1">
-                                    <Button variant="primary" size="md" className="w-full shadow-md shadow-primary-500/10">
-                                        <SettingsIcon className="w-4 h-4 mr-2" />
+                            <div className="flex flex-col sm:flex-row flex-wrap xl:flex-nowrap gap-3">
+                                <Link to={`/dashboard/domains/${domain.domainName}`} className="flex-1 min-w-[120px]">
+                                    <Button variant="primary" size="md" className="w-full shadow-md shadow-primary-500/10 whitespace-nowrap">
+                                        <SettingsIcon className="w-4 h-4 mr-2 flex-shrink-0" />
                                         Manage
                                     </Button>
                                 </Link>
                                 <Button
                                     variant={domain.autoRenew ? "success" : "outline"}
                                     size="md"
-                                    className="flex-1"
+                                    className="flex-1 min-w-[140px] whitespace-nowrap"
                                     onClick={() => handleToggleAutoRenew(domain)}
                                     isLoading={togglingDomainId === domain._id}
                                 >
                                     {togglingDomainId !== domain._id && (
-                                        <RefreshCw className={cn("w-4 h-4 mr-2", domain.autoRenew ? "text-white" : "text-neutral-400")} />
+                                        <RefreshCw className={cn("w-4 h-4 mr-2 flex-shrink-0", domain.autoRenew ? "text-white" : "text-neutral-400")} />
                                     )}
                                     {domain.autoRenew ? 'Auto-Renew On' : 'Auto-Renew Off'}
                                 </Button>
-                                <Button variant="ghost" size="md" className="sm:px-2 py-2 text-neutral-400 hover:text-neutral-600 flex justify-center">
+                                <Button variant="ghost" size="md" className="sm:px-2 py-2 text-neutral-400 hover:text-neutral-600 flex justify-center flex-shrink-0 sm:w-auto w-full">
                                     <MoreHorizontal className="w-5 h-5" />
                                 </Button>
                             </div>
