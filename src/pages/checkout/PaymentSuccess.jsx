@@ -111,9 +111,19 @@ const PaymentSuccess = () => {
                                         Next Steps
                                     </h3>
                                     <ul className="text-sm text-success-800 space-y-2">
-                                        <li>• Your domain is ready to use</li>
-                                        <li>• You can now manage DNS records</li>
-                                        <li>• Check your email for more details</li>
+                                        {order?.type === 'SSL' ? (
+                                            <>
+                                                <li>• <strong>Payment successful!</strong></li>
+                                                <li>• Please log into <strong>{order?.extraData?.approverEmail || 'your email'}</strong> to validate your domain ownership.</li>
+                                                <li>• Once validated, your certificate will become Active in the Dashboard.</li>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <li>• Your domain is ready to use</li>
+                                                <li>• You can now manage DNS records</li>
+                                                <li>• Check your email for more details</li>
+                                            </>
+                                        )}
                                     </ul>
                                 </div>
                             </div>

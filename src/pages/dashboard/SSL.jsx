@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import { cn } from '../../lib/utils';
 import {
     Shield,
@@ -35,7 +37,8 @@ import {
     useSetAutorenewMutation,
     useGetSslNeededDataQuery,
     useViewSslLogQuery,
-    useUpdateOrderMutation
+    useUpdateOrderMutation,
+    useLazyGetCertificateDetailsQuery
 } from '../../redux/features/ssl/sslApi';
 import { addToCart } from '../../redux/slices/cartSlice';
 import DashboardLayout from '../../components/layout/DashboardLayout';
@@ -59,11 +62,11 @@ const SSL = () => {
     const [configCertId, setConfigCertId] = useState(null);
     const [selectedDomain, setSelectedDomain] = useState('');
     const [eligibility, setEligibility] = useState(null);
-    const [csr, setCsr] = useState('');
     const [approverEmail, setApproverEmail] = useState('');
     const { data: sslProducts, isLoading: isLoadingProducts } = useGetSslProductsQuery();
     const { data: certificates, isLoading: isLoadingCerts } = useListCertificatesQuery();
     const [checkEligibility, { isFetching: isCheckingEligibility }] = useLazyCheckSslEligibilityQuery();
+    const [getCertDetails, { isFetching: isDownloadingZip }] = useLazyGetCertificateDetailsQuery();
 
     // Lifecycle Mutations
     const [cancelOrder] = useCancelSslOrderMutation();
@@ -79,7 +82,6 @@ const SSL = () => {
     const [selectedCert, setSelectedCert] = useState(null);
     const [isDetailsOpen, setIsDetailsOpen] = useState(false);
     const [isReissueModalOpen, setIsReissueModalOpen] = useState(false);
-    const [reissueCsr, setReissueCsr] = useState('');
 
     // Reset eligibility when domain changes
     useEffect(() => {
@@ -106,8 +108,41 @@ const SSL = () => {
         }
     };
 
+    const handleDownloadZip = async (certId, commonName) => {
+        try {
+            const data = await getCertDetails(certId).unwrap();
+            const zip = new JSZip();
+            
+            let hasFiles = false;
+            
+            if (data.crt) {
+                zip.file(`${commonName || 'domain'}.crt`, data.crt);
+                hasFiles = true;
+            }
+            if (data.ca) {
+                zip.file(`ca-bundle.crt`, data.ca);
+                hasFiles = true;
+            }
+            if (data.privateKey) {
+                zip.file(`private.key`, data.privateKey);
+                hasFiles = true;
+            }
+            
+            if (!hasFiles) {
+                addToast('warning', 'No Files', 'Certificate files are not available yet.');
+                return;
+            }
+
+            const content = await zip.generateAsync({ type: 'blob' });
+            saveAs(content, `${commonName || 'certificate'}-ssl.zip`);
+            addToast('success', 'Download Started', 'Your certificate files are downloading.');
+        } catch (err) {
+            addToast('error', 'Download Failed', err?.data?.message || 'Could not fetch certificate details.');
+        }
+    };
+
     const handleConfigureSSL = async () => {
-        if (!configCertId || !selectedDomain || !csr || !approverEmail) {
+        if (!configCertId || !selectedDomain || !approverEmail) {
             addToast('warning', 'Missing Details', 'Please complete all configuration fields.');
             return;
         }
@@ -116,15 +151,14 @@ const SSL = () => {
             await updateOrder({
                 id: configCertId,
                 commonName: selectedDomain,
-                csr: csr,
-                validationMethod: 'EMAIL', // Default to EMAIL as per spec 3.2 example
+                // Zero-Config: Backend generates CSR/Private Key
+                validationMethod: 'EMAIL',
                 validationEmail: approverEmail
             }).unwrap();
 
             setViewState('LIST');
             addToast('success', 'Configuration Submitted', 'Your certificate configuration has been sent for validation.');
             setConfigCertId(null);
-            setCsr('');
             setApproverEmail('');
             setSelectedDomain('');
         } catch (err) {
@@ -161,16 +195,19 @@ const SSL = () => {
     };
 
     const handleReissue = async () => {
-        if (!reissueCsr) {
-            addToast('warning', 'CSR Required', 'Please provide a new CSR for reissuance.');
-            return;
-        }
-
         try {
-            await reissueCertificate({ id: selectedCert.id, csr: reissueCsr }).unwrap();
-            addToast('success', 'Reissue Requested', 'Your certificate is being reissued with the new CSR.');
+            const response = await reissueCertificate({ id: selectedCert.id }).unwrap();
+            const data = response?.data || response;
+            
+            addToast('success', 'Reissue Requested', 'Your certificate is being reissued. A new private key has been generated.');
             setIsReissueModalOpen(false);
-            setReissueCsr('');
+
+            // Automatically trigger download of the new private key if returned immediately
+            if (data?.privateKey) {
+                const blob = new Blob([data.privateKey], { type: 'text/plain' });
+                saveAs(blob, `${selectedCert.commonName || 'new'}-private.key`);
+                addToast('info', 'Key Downloaded', 'Your new private key has been downloaded for safereeping.');
+            }
         } catch (err) {
             addToast('error', 'Reissue Failed', err?.data?.message || 'Failed to reissue certificate.');
         }
@@ -225,9 +262,11 @@ const SSL = () => {
                 return <Badge variant="success">Active</Badge>;
             case 'WAIT_FOR_INPUT':
                 return <Badge variant="warning">Action Required</Badge>;
+            case 'REQUESTED':
             case 'PENDING':
                 return <Badge variant="warning">Pending INWX</Badge>;
             case 'VALIDATING':
+            case 'PENDING_VALIDATION':
                 return <Badge variant="primary">Validating</Badge>;
             case 'EXPIRED':
                 return <Badge variant="error">Expired</Badge>;
@@ -378,17 +417,32 @@ const SSL = () => {
                                                                     Activate
                                                                 </Button>
                                                             ) : (
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="sm"
-                                                                    className="h-8 text-[10px] px-3 font-bold uppercase tracking-wide text-neutral-500 hover:text-primary-600"
-                                                                    onClick={() => {
-                                                                        setSelectedCert(cert);
-                                                                        setIsDetailsOpen(true);
-                                                                    }}
-                                                                >
-                                                                    Details
-                                                                </Button>
+                                                                <div className="flex gap-2">
+                                                                    {cert.status === 'ACTIVE' && (
+                                                                        <Button
+                                                                            variant="primary"
+                                                                            size="sm"
+                                                                            className="h-8 text-[10px] px-3 font-bold uppercase tracking-wide shadow-lg shadow-primary-500/20"
+                                                                            onClick={() => handleDownloadZip(cert.id, cert.commonName)}
+                                                                            isLoading={isDownloadingZip}
+                                                                            disabled={isDownloadingZip}
+                                                                        >
+                                                                            <Download className="w-3.5 h-3.5 mr-1" />
+                                                                            ZIP
+                                                                        </Button>
+                                                                    )}
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="h-8 text-[10px] px-3 font-bold uppercase tracking-wide text-neutral-500 hover:text-primary-600"
+                                                                        onClick={() => {
+                                                                            setSelectedCert(cert);
+                                                                            setIsDetailsOpen(true);
+                                                                        }}
+                                                                    >
+                                                                        Details
+                                                                    </Button>
+                                                                </div>
                                                             )}
                                                         </div>
                                                     </td>
@@ -666,25 +720,24 @@ const SSL = () => {
                                         </div>
                                     </div>
 
-                                    {/* Section 2: CSR */}
+                                    {/* Section 2: Zero-Config Notice */}
                                     <div className="space-y-4">
                                         <div className="flex items-center gap-3 pb-2 border-b border-neutral-100">
                                             <div className="w-8 h-8 bg-primary-100 text-primary-600 rounded-lg flex items-center justify-center font-black text-xs">2</div>
-                                            <h3 className="text-lg font-bold text-neutral-900">Certificate Signing Request</h3>
+                                            <h3 className="text-lg font-bold text-neutral-900">Security Provisioning</h3>
                                         </div>
 
-                                        <div className="space-y-2">
-                                            <label className="block text-xs font-black text-neutral-400 uppercase tracking-widest ml-1 flex items-center justify-between">
-                                                CSR Content
-                                                <Badge variant="ghost" size="sm" className="bg-neutral-100 text-[9px] uppercase font-black tracking-widest px-2">Required</Badge>
-                                            </label>
-                                            <textarea
-                                                className="w-full h-48 p-5 rounded-xl border border-neutral-200 bg-white focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all outline-none font-mono text-xs leading-relaxed resize-y"
-                                                placeholder="-----BEGIN CERTIFICATE REQUEST-----..."
-                                                value={csr}
-                                                onChange={(e) => setCsr(e.target.value)}
-                                            />
-                                            <p className="text-[10px] text-neutral-400 pl-1">Generate this on your server using OpenSSL or your hosting panel.</p>
+                                        <div className="p-6 bg-primary-50 rounded-2xl border border-primary-100 flex gap-4">
+                                            <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center shrink-0 text-white shadow-lg">
+                                                <Zap className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs text-primary-900 font-black uppercase tracking-widest mb-1">Zero-Configuration Enabled</p>
+                                                <p className="text-xs text-primary-800 leading-relaxed font-bold">
+                                                    To ensure maximum security and prevent validation errors, our system will automatically generate a secure 2048-bit Private Key and CSR for you. 
+                                                    You will be able to download your private key once the certificate is issued.
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -774,7 +827,7 @@ const SSL = () => {
                                             variant="primary"
                                             className="h-12 px-8 shadow-lg shadow-primary-500/20 rounded-xl font-black uppercase tracking-widest text-xs"
                                             onClick={handleConfigureSSL}
-                                            disabled={!eligibility?.eligible || !csr || !approverEmail}
+                                            disabled={!eligibility?.eligible || !approverEmail}
                                         >
                                             <CheckCircle className="w-4 h-4 mr-2" />
                                             Submit Configuration
@@ -869,50 +922,63 @@ const SSL = () => {
                                             onClick={() => {
                                                 setIsDetailsOpen(false);
                                                 setConfigCertId(selectedCert.id);
-                                                setIsConfigModalOpen(true);
+                                                setViewState('CONFIGURE');
+                                                window.scrollTo(0, 0);
                                             }}
                                         >
                                             <Plus className="w-4 h-4 mr-2" />
                                             Configure Now
                                         </Button>
                                     </div>
+                                ) : selectedCert.status === 'ACTIVE' ? (
+                                    <div className="space-y-4">
+                                        <div className="p-5 bg-success-50 rounded-[1.5rem] border border-success-100">
+                                            <h5 className="font-bold text-success-900 mb-2 flex items-center gap-2 text-sm">
+                                                <CheckCircle className="w-4 h-4" />
+                                                Ready to Install
+                                            </h5>
+                                            <p className="text-xs text-success-800 leading-relaxed mb-4">
+                                                To secure your website, download the certificate ZIP and upload these three files (<b>.crt</b>, <b>.ca-bundle</b>, and <b>.key</b>) to your Web Hosting control panel (e.g., <b>cPanel</b>, <b>Vercel</b>, <b>AWS</b>).
+                                            </p>
+                                            <Button
+                                                variant="primary"
+                                                className="w-full h-12 shadow-lg shadow-success-500/20 font-black uppercase tracking-widest text-[10px] rounded-xl bg-success-600 hover:bg-success-700"
+                                                onClick={() => handleDownloadZip(selectedCert.id, selectedCert.commonName)}
+                                                isLoading={isDownloadingZip}
+                                                disabled={isDownloadingZip}
+                                            >
+                                                <Download className="w-4 h-4 mr-2" />
+                                                Download Certificate ZIP
+                                            </Button>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <Button variant="secondary" size="sm" className="h-12 text-[10px] font-black uppercase tracking-widest rounded-xl" onClick={() => setIsReissueModalOpen(true)}>
+                                                <RefreshCw className="w-4 h-4 mr-2" /> Reissue
+                                            </Button>
+                                            <Button variant="secondary" size="sm" className="h-12 text-[10px] font-black uppercase tracking-widest rounded-xl" onClick={() => handleResendApproval(selectedCert.id)}>
+                                                <Mail className="w-4 h-4 mr-2" /> Resend
+                                            </Button>
+                                            <Button variant="secondary" size="sm" className="h-12 text-[10px] font-black uppercase tracking-widest rounded-xl" onClick={() => handleRenew(selectedCert.id)}>
+                                                <RefreshCw className="w-4 h-4 mr-2" /> Renew
+                                            </Button>
+                                            <Button variant="danger" size="sm" className="h-12 text-[10px] font-black uppercase tracking-widest rounded-xl" onClick={() => handleCancelOrder(selectedCert.id)}>
+                                                <Trash2 className="w-4 h-4 mr-2" /> Cancel
+                                            </Button>
+                                        </div>
+                                    </div>
                                 ) : (
                                     <div className="grid grid-cols-2 gap-3">
-                                        <Button
-                                            variant="secondary"
-                                            size="sm"
-                                            className="h-12 text-[10px] font-black uppercase tracking-widest rounded-xl"
-                                            onClick={() => setIsReissueModalOpen(true)}
-                                        >
-                                            <RefreshCw className="w-4 h-4 mr-2" />
-                                            Reissue
+                                        <Button variant="secondary" size="sm" className="h-12 text-[10px] font-black uppercase tracking-widest rounded-xl" onClick={() => setIsReissueModalOpen(true)}>
+                                            <RefreshCw className="w-4 h-4 mr-2" /> Reissue
                                         </Button>
-                                        <Button
-                                            variant="secondary"
-                                            size="sm"
-                                            className="h-12 text-[10px] font-black uppercase tracking-widest rounded-xl"
-                                            onClick={() => handleResendApproval(selectedCert.id)}
-                                        >
-                                            <Mail className="w-4 h-4 mr-2" />
-                                            Resend
+                                        <Button variant="secondary" size="sm" className="h-12 text-[10px] font-black uppercase tracking-widest rounded-xl" onClick={() => handleResendApproval(selectedCert.id)}>
+                                            <Mail className="w-4 h-4 mr-2" /> Resend
                                         </Button>
-                                        <Button
-                                            variant="secondary"
-                                            size="sm"
-                                            className="h-12 text-[10px] font-black uppercase tracking-widest rounded-xl"
-                                            onClick={() => handleRenew(selectedCert.id)}
-                                        >
-                                            <RefreshCw className="w-4 h-4 mr-2" />
-                                            Renew
+                                        <Button variant="secondary" size="sm" className="h-12 text-[10px] font-black uppercase tracking-widest rounded-xl" onClick={() => handleRenew(selectedCert.id)}>
+                                            <RefreshCw className="w-4 h-4 mr-2" /> Renew
                                         </Button>
-                                        <Button
-                                            variant="danger"
-                                            size="sm"
-                                            className="h-12 text-[10px] font-black uppercase tracking-widest rounded-xl"
-                                            onClick={() => handleCancelOrder(selectedCert.id)}
-                                        >
-                                            <Trash2 className="w-4 h-4 mr-2" />
-                                            Cancel
+                                        <Button variant="danger" size="sm" className="h-12 text-[10px] font-black uppercase tracking-widest rounded-xl" onClick={() => handleCancelOrder(selectedCert.id)}>
+                                            <Trash2 className="w-4 h-4 mr-2" /> Cancel
                                         </Button>
                                     </div>
                                 )}
@@ -959,20 +1025,12 @@ const SSL = () => {
                 <div className="space-y-6">
                     <div className="p-5 bg-primary-50 rounded-[1.5rem] border border-primary-100 flex gap-4">
                         <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center shrink-0 text-white shadow-lg transition-transform hover:rotate-12">
-                            <RefreshCw className="w-5 h-5" />
+                            <Zap className="w-5 h-5" />
                         </div>
                         <p className="text-xs text-primary-800 leading-relaxed font-bold">
-                            Reissuance is required if your private key is compromised or you've moved to a new server. You'll need to provide a fresh CSR.
+                            Requesting a reissue will instantly generate a brand new secure Private Key. The old certificate will be revoked. 
+                            <strong> A download for your new private key will start immediately.</strong>
                         </p>
-                    </div>
-                    <div className="space-y-2">
-                        <label className="block text-xs font-black text-neutral-400 uppercase tracking-widest ml-1">New CSR (Certificate Signing Request)</label>
-                        <textarea
-                            className="w-full h-52 p-5 rounded-[1.5rem] border border-neutral-200 bg-white focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all outline-none font-mono text-xs leading-relaxed"
-                            placeholder="-----BEGIN CERTIFICATE REQUEST-----..."
-                            value={reissueCsr}
-                            onChange={(e) => setReissueCsr(e.target.value)}
-                        />
                     </div>
                     <div className="flex gap-4">
                         <Button variant="ghost" className="flex-1 h-12 rounded-xl font-bold" onClick={() => setIsReissueModalOpen(false)}>Cancel</Button>

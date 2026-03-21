@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { CheckCircle, Lock } from 'lucide-react';
-import { clearCart, updateItemYear, selectCartTotal } from '../../redux/slices/cartSlice';
+import { clearCart, updateItemYear, updateItemDetails, selectCartTotal } from '../../redux/slices/cartSlice';
 import { useToast } from '../../context/ToastContext';
 import { useRegisterDomainMutation } from '../../redux/features/domain/domainApi';
 import {
@@ -53,12 +53,15 @@ const Checkout = () => {
             let response;
 
             if (firstItem.type === 'ssl') {
-                // Supports both Mode A (Quick Buy) and Mode B (Full Setup)
+                if (!firstItem.domain || !firstItem.approverEmail) {
+                    addToast('warning', 'Missing Information', 'Please provide Domain and select an Approver Email.');
+                    return;
+                }
+                
                 response = await purchaseSsl({
                     productId: firstItem.productCode,
-                    commonName: firstItem.domain,
-                    csr: firstItem.csr,
-                    validationEmail: firstItem.approverEmail,
+                    domain: firstItem.domain,
+                    approverEmail: firstItem.approverEmail,
                     period: firstItem.year || 1
                 }).unwrap();
             } else if (firstItem.type === 'dyndns') {
@@ -167,16 +170,14 @@ const Checkout = () => {
                                     <CardBody>
                                         <div className="space-y-4">
                                             {items.map((item) => {
-                                                // Safety sanitization for stale cart items (e.g., .bizbiz or .biz.biz)
-                                                // This ensures that even if user didn't clear cart, we fix the name here
                                                 const cleanName = item.name
-                                                    .replace(/\.([a-z0-9]+)\1$/i, '.$1') // fix .bizbiz
-                                                    .replace(/\.([a-z0-9]+)\.\1$/i, '.$1'); // fix .biz.biz
+                                                    .replace(/\.([a-z0-9]+)\1$/i, '.$1')
+                                                    .replace(/\.([a-z0-9]+)\.\1$/i, '.$1');
 
                                                 return (
                                                     <div key={item.id} className="p-4 border border-neutral-100 rounded-xl bg-neutral-50/50">
                                                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                                            <div>
+                                                            <div className="flex-1 min-w-0">
                                                                 <h3 className="font-bold text-neutral-900">{cleanName}</h3>
                                                                 <div className="flex items-center gap-2 mt-1">
                                                                     <p className="text-sm text-neutral-500 capitalize">{item.type}</p>
@@ -193,8 +194,53 @@ const Checkout = () => {
                                                                         ))}
                                                                     </select>
                                                                 </div>
+                                                                {item.type === 'ssl' && (
+                                                                    <div className="mt-4 space-y-3 p-3 bg-white rounded-lg border border-neutral-100 shadow-sm">
+                                                                        <div>
+                                                                            <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1">Target Domain</label>
+                                                                            <input
+                                                                                type="text"
+                                                                                placeholder="e.g. example.com"
+                                                                                className="w-full text-sm h-10 px-3 rounded-lg border border-neutral-200 focus:outline-none focus:border-primary-500"
+                                                                                value={item.domain || ''}
+                                                                                onChange={(e) => dispatch(updateItemDetails({ id: item.id, domain: e.target.value }))}
+                                                                            />
+                                                                        </div>
+                                                                        <div>
+                                                                            <label className="block text-xs font-bold text-neutral-500 uppercase tracking-widest mb-1">Approver Email</label>
+                                                                            <div className="flex flex-col sm:flex-row gap-2">
+                                                                                <select
+                                                                                    className="flex-1 text-sm h-10 px-3 rounded-lg border border-neutral-200 focus:outline-none focus:border-primary-500"
+                                                                                    value={item.approverEmail || ''}
+                                                                                    onChange={(e) => dispatch(updateItemDetails({ id: item.id, approverEmail: e.target.value }))}
+                                                                                >
+                                                                                    <option value="">Select standard email...</option>
+                                                                                    {item.domain && (
+                                                                                        <>
+                                                                                            <option value={`admin@${item.domain}`}>admin@{item.domain}</option>
+                                                                                            <option value={`administrator@${item.domain}`}>administrator@{item.domain}</option>
+                                                                                            <option value={`webmaster@${item.domain}`}>webmaster@{item.domain}</option>
+                                                                                            <option value={`postmaster@${item.domain}`}>postmaster@{item.domain}</option>
+                                                                                            <option value={`hostmaster@${item.domain}`}>hostmaster@{item.domain}</option>
+                                                                                        </>
+                                                                                    )}
+                                                                                </select>
+                                                                                <input
+                                                                                    type="email"
+                                                                                    placeholder="Or custom email"
+                                                                                    className="flex-1 text-sm h-10 px-3 rounded-lg border border-neutral-200 focus:outline-none focus:border-primary-500"
+                                                                                    value={item.approverEmail || ''}
+                                                                                    onChange={(e) => dispatch(updateItemDetails({ id: item.id, approverEmail: e.target.value }))}
+                                                                                />
+                                                                            </div>
+                                                                            <p className="text-[10px] text-neutral-400 mt-2 font-medium">
+                                                                                Must be <b>admin@</b>, <b>administrator@</b>, <b>hostmaster@</b>, <b>postmaster@</b>, or <b>webmaster@</b> as required by Certificate Authorities.
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                            <div className="text-right">
+                                                            <div className="text-right mt-4 sm:mt-0">
                                                                 <span className="font-bold text-neutral-900 block">${(item.price * item.year).toFixed(2)}</span>
                                                                 {item.year > 1 && (
                                                                     <span className="text-xs text-neutral-400 font-medium">${item.price.toFixed(2)} / yr</span>

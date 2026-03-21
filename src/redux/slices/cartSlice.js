@@ -25,6 +25,14 @@ const cartSlice = createSlice({
                 item.year = year;
             }
         },
+        updateItemDetails: (state, action) => {
+            const { id, domain, approverEmail } = action.payload;
+            const item = state.items.find((i) => i.id === id);
+            if (item) {
+                if (domain !== undefined) item.domain = domain;
+                if (approverEmail !== undefined) item.approverEmail = approverEmail;
+            }
+        },
         removeFromCart: (state, action) => {
             state.items = state.items.filter((item) => item.id !== action.payload);
         },
@@ -40,7 +48,7 @@ const cartSlice = createSlice({
     },
 });
 
-export const { addToCart, updateItemYear, removeFromCart, clearCart, toggleCart, setCartOpen } = cartSlice.actions;
+export const { addToCart, updateItemYear, updateItemDetails, removeFromCart, clearCart, toggleCart, setCartOpen } = cartSlice.actions;
 
 // Selector for total
 export const selectCartTotal = (state) =>

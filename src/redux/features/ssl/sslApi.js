@@ -133,6 +133,7 @@ export const {
     useUpdateOrderMutation,
     useListCertificatesQuery,
     useGetCertificateDetailsQuery,
+    useLazyGetCertificateDetailsQuery,
     useCancelSslOrderMutation,
     useReissueCertificateMutation,
     useRenewCertificateMutation,
