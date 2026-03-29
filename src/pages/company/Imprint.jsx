@@ -100,7 +100,7 @@ const Imprint = () => {
                                         <div className="mt-2 space-y-1">
                                             <p><span className="font-semibold">Telephone HQ – United Kingdom of Great Britain and Northern Ireland, London:</span> +44 7470 86 92 – 60</p>
                                             <p><span className="font-semibold">Email:</span> <a href="mailto:Info@ScandicTrust.com" className="text-primary-600 hover:underline">Info@ScandicTrust.com</a></p>
-                                            <p className="break-all"><span className="font-semibold">Commercial register:</span> <a href="https://LegierGroup.com/Scandic_Trust_Group_LLC_Extract_from_the_Unified_State_Register.pdf" target="_blank" rel="noreferrer" className="text-primary-600 hover:underline">https://LegierGroup.com/Scandic_Trust_Group_LLC...</a></p>
+                                            <p className="break-all"><span className="font-semibold">Commercial register:</span> <a href="https://api.scandictrust.com/public/Scandic%20Trust%20Group%20LLC%20Register.pdf" target="_blank" rel="noreferrer" className="text-primary-600 hover:underline">https://api.scandictrust.com/public/Scandic%20Trust%20Group%20LLC%20Register.pdf</a></p>
                                         </div>
                                     </div>
 
@@ -113,6 +113,17 @@ const Imprint = () => {
                                             <p><span className="font-semibold">Phone:</span> +49 (0) 30 9921134 – 69</p>
                                             <p><span className="font-semibold">Email:</span> <a href="mailto:Office@LegierGroup.com" className="text-primary-600 hover:underline">Office@LegierGroup.com</a></p>
                                             <p className="break-all"><span className="font-semibold">Commercial Register:</span> <a href="https://www.Handelsregister.de/rp_web/normalesuche/welcome.xhtml" target="_blank" rel="noreferrer" className="text-primary-600 hover:underline">https://www.Handelsregister.de/rp_web/normalesuche/welcome.xhtml</a></p>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <p className="font-bold text-sm text-neutral-800">in cooperation with: ALGIZ AG, SWITZERLAND</p>
+                                        <p className="italic mb-1">a Division of Scandic Finance Group</p>
+                                        <p>Signalstrasse 28</p>
+                                        <p>9400 Rorschach / Switzerland</p>
+                                        <div className="mt-2 space-y-1">
+                                            <p><span className="font-semibold">Phone HQ - Zurich:</span> +41 44 7979 99</p>
+                                            <p className="break-all"><span className="font-semibold">Swiss Commercial Register – Verify Link:</span> <a href="https://sg.chregister.ch/cr-portal/auszug/auszug.xhtml?uid=CHE-115.000.423" target="_blank" rel="noreferrer" className="text-primary-600 hover:underline">https://sg.chregister.ch/cr-portal/auszug/auszug.xhtml?uid=CHE-115.000.423</a></p>
                                         </div>
                                     </div>
                                 </div>
