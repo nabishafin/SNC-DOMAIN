@@ -8,7 +8,9 @@ import { useRegisterDomainMutation } from '../../redux/features/domain/domainApi
 import {
     usePurchaseSslMutation,
 } from '../../redux/features/ssl/sslApi';
-import { useInitiatePaymentMutation } from '../../redux/features/payment/paymentApi';
+import { useInitiatePaymentMutation, useCreateSncPaymentMutation } from '../../redux/features/payment/paymentApi';
+import SncPaymentModal from '../../components/payment/SncPaymentModal';
+import useSncPaymentStore from '../../store/useSncPaymentStore';
 import { usePurchaseDynDnsMutation } from '../../redux/features/dyndns/dyndnsApi';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -27,7 +29,9 @@ const Checkout = () => {
     const [registerDomain, { isLoading: isRegisteringDomain }] = useRegisterDomainMutation();
     const [purchaseSsl, { isLoading: isPurchasingSsl }] = usePurchaseSslMutation();
     const [initiatePayment, { isLoading: isInitiatingPayment }] = useInitiatePaymentMutation();
+    const [createSncPayment, { isLoading: isCreatingSncPayment }] = useCreateSncPaymentMutation();
     const [purchaseDynDns, { isLoading: isPurchasingDynDns }] = usePurchaseDynDnsMutation();
+    const { openModal } = useSncPaymentStore();
 
     const isRegistering = isRegisteringDomain || isPurchasingSsl || isInitiatingPayment || isPurchasingDynDns;
 
@@ -109,6 +113,23 @@ const Checkout = () => {
         } catch (err) {
             console.error('Payment initiation failed:', err);
             addToast('error', 'Payment Failed', err?.data?.message || 'Could not initiate payment');
+        }
+    };
+
+    const handleInitiateSncPayment = async () => {
+        const orderId = orderData?.orderId || orderData?.data?.orderId;
+        if (!orderId) return;
+
+        try {
+            const response = await createSncPayment({ orderId }).unwrap();
+            if (response.success && response.data) {
+                openModal(response.data);
+            } else {
+                addToast('error', 'Payment Failed', response.message || 'Could not initiate SNC payment');
+            }
+        } catch (err) {
+            console.error('SNC Payment initiation failed:', err);
+            addToast('error', 'Payment Failed', err?.data?.message || 'Could not initiate SNC payment');
         }
     };
 
@@ -291,14 +312,26 @@ const Checkout = () => {
                                             </div>
                                         </div>
 
-                                        <Button
-                                            variant="primary"
-                                            className="w-full h-14 text-xl shadow-xl shadow-primary-500/30"
-                                            onClick={handleInitiatePayment}
-                                            isLoading={isInitiatingPayment}
-                                        >
-                                            Pay Now with Stripe
-                                        </Button>
+                                        <div className="flex flex-col sm:flex-row gap-4">
+                                            <Button
+                                                variant="outline"
+                                                className="flex-1 h-14 text-lg border-2 border-primary-500 text-primary-600 hover:bg-primary-50"
+                                                onClick={handleInitiatePayment}
+                                                isLoading={isInitiatingPayment}
+                                                disabled={isCreatingSncPayment}
+                                            >
+                                                Pay with Stripe
+                                            </Button>
+                                            <Button
+                                                variant="primary"
+                                                className="flex-1 h-14 text-lg shadow-xl shadow-primary-500/30 bg-neutral-900 hover:bg-neutral-800 text-white border-neutral-900"
+                                                onClick={handleInitiateSncPayment}
+                                                isLoading={isCreatingSncPayment}
+                                                disabled={isInitiatingPayment}
+                                            >
+                                                Pay with SNC Token
+                                            </Button>
+                                        </div>
                                     </CardBody>
                                 </Card>
                             )}
@@ -351,6 +384,7 @@ const Checkout = () => {
                     </div>
                 </div>
             </div>
+            <SncPaymentModal />
         </PublicLayout>
     );
 };

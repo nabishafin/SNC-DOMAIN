@@ -27,6 +27,13 @@ const GlobalScroll = () => {
             gestureOrientation: 'vertical',
             smoothWheel: true,
             touchMultiplier: 2,
+            prevent: (node) => {
+                return (
+                    node.nodeName === 'W3M-MODAL' ||
+                    node.id === 'w3m-modal' ||
+                    (node.closest && node.closest('w3m-modal')) !== null
+                );
+            }
         });
 
         function raf(time) {
