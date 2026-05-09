@@ -49,10 +49,10 @@ const DashboardLayout = ({ children }) => {
     const navigation = [
         { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
         { name: 'My Domains', href: '/dashboard/domains', icon: Globe },
-        { name: 'SSL Certificates', href: '/dashboard/ssl', icon: Lock },
-        { name: 'Hosting', href: '/dashboard/hosting', icon: Server },
+        // { name: 'SSL Certificates', href: '/dashboard/ssl', icon: Lock },
+        // { name: 'Hosting', href: '/dashboard/hosting', icon: Server },
         { name: 'Glue Records', href: '/dashboard/glue-records', icon: Layers },
-        { name: 'DynDNS', href: '/dashboard/dyndns', icon: Zap },
+        // { name: 'DynDNS', href: '/dashboard/dyndns', icon: Zap },
         { name: 'Contacts', href: '/dashboard/contacts', icon: Users },
         { name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
         { name: 'Settings', href: '/dashboard/settings', icon: Settings },
