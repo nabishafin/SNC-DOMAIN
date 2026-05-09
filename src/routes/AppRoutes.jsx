@@ -38,11 +38,11 @@ import Overview from '../pages/dashboard/Overview';
 import MyDomains from '../pages/dashboard/MyDomains';
 import DomainDetails from '../pages/dashboard/DomainDetails';
 import Settings from '../pages/dashboard/Settings';
-import SSL from '../pages/dashboard/SSL';
+// import SSL from '../pages/dashboard/SSL';
 import Contacts from '../pages/dashboard/Contacts';
 import Billing from '../pages/dashboard/Billing';
-import DynDNS from '../pages/dashboard/DynDNS';
-import Hosting from '../pages/dashboard/Hosting';
+// import DynDNS from '../pages/dashboard/DynDNS';
+// import Hosting from '../pages/dashboard/Hosting';
 import GlueRecords from '../pages/dashboard/GlueRecords';
 
 const AppRoutes = () => {
@@ -84,11 +84,11 @@ const AppRoutes = () => {
             <Route path="/dashboard/domains" element={<MyDomains />} />
             <Route path="/dashboard/domains/:id" element={<DomainDetails />} />
             <Route path="/dashboard/settings" element={<Settings />} />
-            <Route path="/dashboard/ssl" element={<SSL />} />
+            {/* <Route path="/dashboard/ssl" element={<SSL />} /> */}
             <Route path="/dashboard/contacts" element={<Contacts />} />
             <Route path="/dashboard/billing" element={<Billing />} />
-            <Route path="/dashboard/dyndns" element={<DynDNS />} />
-            <Route path="/dashboard/hosting" element={<Hosting />} />
+            {/* <Route path="/dashboard/dyndns" element={<DynDNS />} /> */}
+            {/* <Route path="/dashboard/hosting" element={<Hosting />} /> */}
             <Route path="/dashboard/glue-records" element={<GlueRecords />} />
 
             {/* Checkout Routes */}
